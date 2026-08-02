@@ -38,12 +38,25 @@ final readonly class Marshaller implements MarshallerInterface
         $out = [];
         $reflection = new ReflectionClass($model);
 
+        $extras = [];
+
         foreach ($this->descriptors->descriptorsFor($model::class) as $descriptor) {
             $value = $reflection->getProperty($descriptor->phpName)->getValue($model);
+
+            // Extra keys are keys of the payload, not one key holding a map,
+            // so they go back out beside the declared properties rather than
+            // nested under a name of their own.
+            if ($descriptor->additional) {
+                $extras = $this->encodeMap($value, $descriptor->type);
+                continue;
+            }
+
             $out[$descriptor->wireName] = $this->encode($value, $descriptor->type);
         }
 
-        return $out;
+        // `+` and not a merge: a declared property owns its wire name, so an
+        // extra key that somehow carries the same one cannot overwrite it.
+        return $out + $extras;
     }
 
     private function encode(mixed $value, PropertyType $type): mixed
