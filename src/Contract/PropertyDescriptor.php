@@ -12,10 +12,18 @@ use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
  */
 final readonly class PropertyDescriptor
 {
+    /**
+     * @param bool $additional true for the one property carrying the keys no
+     *                         declared property claims — the schema allowed
+     *                         them through `additionalProperties` without
+     *                         naming them, so there is no wire name to look
+     *                         one up by and $wireName is not read for it
+     */
     public function __construct(
         public string $phpName,
         public string $wireName,
         public PropertyType $type,
         public ?Discriminator $discriminator = null,
+        public bool $additional = false,
     ) {}
 }

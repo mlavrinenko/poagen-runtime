@@ -10,6 +10,7 @@ use LogicException;
 use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
 use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
+use Mlavrinenko\Paogen\Runtime\Contract\PropertyDescriptor;
 use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
 use Mlavrinenko\Paogen\Runtime\ScalarBinding;
 
@@ -41,8 +42,17 @@ final readonly class Hydrator implements HydratorInterface
     public function hydrate(string $class, array $data): object
     {
         $args = [];
+        $claimed = [];
+        $extras = null;
 
         foreach ($this->descriptors->descriptorsFor($class) as $descriptor) {
+            if ($descriptor->additional) {
+                $extras = $descriptor;
+                continue;
+            }
+
+            $claimed[$descriptor->wireName] = true;
+
             if (!array_key_exists($descriptor->wireName, $data)) {
                 continue;
             }
@@ -50,7 +60,35 @@ final readonly class Hydrator implements HydratorInterface
             $args[$descriptor->phpName] = $this->decode($data[$descriptor->wireName], $descriptor->type, $descriptor->discriminator);
         }
 
+        if ($extras instanceof PropertyDescriptor) {
+            $args[$extras->phpName] = $this->extras($data, $claimed, $extras);
+        }
+
         return new $class(...$args);
+    }
+
+    /**
+     * Every key no declared property claimed, decoded as the schema typed the
+     * extra values. A declared property always wins the key it names, so the
+     * bag never shadows one.
+     *
+     * @param array<mixed>       $data
+     * @param array<string,true> $claimed
+     *
+     * @return array<string, mixed>
+     */
+    private function extras(array $data, array $claimed, PropertyDescriptor $descriptor): array
+    {
+        $valueType = $descriptor->type->itemType ?? PropertyType::passthrough();
+        $out = [];
+
+        foreach ($data as $key => $value) {
+            if (!isset($claimed[(string) $key])) {
+                $out[(string) $key] = $this->decode($value, $valueType);
+            }
+        }
+
+        return $out;
     }
 
     private function decode(mixed $value, PropertyType $type, ?Discriminator $discriminator = null): mixed
