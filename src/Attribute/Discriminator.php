@@ -11,7 +11,7 @@ use Attribute;
  * type. `$map` carries an OpenAPI `discriminator.mapping` (or the generator-
  * derived equivalent), keyed by wire tag and valued by branch FQCN.
  *
- * See ADR-010.
+ * See `attribute-and-phpdoc-driven-serialization`.
  */
 #[Attribute(Attribute::TARGET_PARAMETER | Attribute::TARGET_PROPERTY)]
 final readonly class Discriminator

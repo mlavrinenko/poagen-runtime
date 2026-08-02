@@ -14,7 +14,7 @@ use Throwable;
  *
  * Separate from the transport so the failure policy is replaceable on its
  * own: the default builds one exception type carrying status, request and
- * response (ADR-009), while a consumer who wants `NotFoundException` for a
+ * response (`error-response-policy`), while a consumer who wants `NotFoundException` for a
  * 404 and `RateLimited` for a 429 implements this instead of reimplementing
  * request assembly to get there.
  *

@@ -13,7 +13,7 @@ use Throwable;
 /**
  * The default failure policy: build the profile's own `ApiException`.
  *
- * ADR-009 keeps that class in the emitted tree so two vendors' clients in
+ * `error-response-policy` keeps that class in the emitted tree so two vendors' clients in
  * one project throw distinguishable types. The runtime cannot know which
  * class that is, so it is named once — where the transport is wired — and
  * this turns it into an instance.

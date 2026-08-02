@@ -19,7 +19,8 @@ use function is_array;
  * file on disk is unchanged.
  *
  * Results are cached per file so each source pays the `token_get_all`
- * cost at most once per process. See ADR-010 and task 029.
+ * cost at most once per process. See
+ * `attribute-and-phpdoc-driven-serialization` and task 029.
  *
  * @internal
  */

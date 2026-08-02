@@ -31,8 +31,9 @@ use function is_string;
  *
  * Two arguments are required because only the consumer can supply them: the
  * base address of the API, and the profile's `Generated\ApiException`, which
- * ADR-009 keeps in the emitted tree and which the runtime therefore cannot
- * name for itself. Everything after that is optional and defaults to a
+ * `error-response-policy` keeps in the emitted tree and which the runtime
+ * therefore cannot name for itself. Everything after that is optional and
+ * defaults to a
  * working implementation — the PSR client and factories through
  * `php-http/discovery`, and the marshalling machinery through its own
  * defaults — so wiring is opt-in rather than a tax:

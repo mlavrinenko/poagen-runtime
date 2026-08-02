@@ -20,7 +20,8 @@ use function is_object;
  * Walks a Model instance, produces a JSON-ready array keyed by wire names.
  *
  * Reads class metadata via {@see DescriptorParser} (native reflection +
- * phpdoc + attributes); see ADR-010. The result is intended to be passed
+ * phpdoc + attributes); see `attribute-and-phpdoc-driven-serialization`. The
+ * result is intended to be passed
  * directly to `json_encode(..., JSON_THROW_ON_ERROR)`.
  */
 final readonly class Marshaller implements MarshallerInterface

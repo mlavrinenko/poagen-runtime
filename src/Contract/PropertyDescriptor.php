@@ -8,7 +8,8 @@ use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
 
 /**
  * One Model property's wire <-> PHP mapping. Built once per class by
- * {@see DescriptorParser} and cached for the process. See ADR-010.
+ * {@see DescriptorParser} and cached for the process. See
+ * `attribute-and-phpdoc-driven-serialization`.
  */
 final readonly class PropertyDescriptor
 {

@@ -10,7 +10,7 @@ use Attribute;
  * Property-level: the OpenAPI `format` hint. Drives scalar codec selection in
  * the runtime (e.g. `'date-time'` → `\DateTimeImmutable` round-trip).
  *
- * See ADR-010.
+ * See `attribute-and-phpdoc-driven-serialization`.
  */
 #[Attribute(Attribute::TARGET_PARAMETER | Attribute::TARGET_PROPERTY)]
 final readonly class Format

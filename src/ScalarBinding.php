@@ -6,7 +6,7 @@ namespace Mlavrinenko\Paogen\Runtime;
 
 /**
  * Opt-in contract that makes a `#[BindsFormat]` value object transparent at
- * the wire boundary. See ADR-007.
+ * the wire boundary. See `hydration-and-serialization-contract`.
  *
  * A VO implementing this interface is treated as a thin wrapper around a
  * scalar: generated models route its value through `toScalar()` on the way

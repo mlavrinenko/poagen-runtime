@@ -22,7 +22,8 @@ use function is_string;
 /**
  * Inverse of {@see Marshaller}: turns a JSON-decoded array into a typed
  * Model instance. Recurses into nested models, lists, maps, and
- * discriminated / structural unions. See ADR-010.
+ * discriminated / structural unions. See
+ * `attribute-and-phpdoc-driven-serialization`.
  */
 final readonly class Hydrator implements HydratorInterface
 {
@@ -128,10 +129,11 @@ final readonly class Hydrator implements HydratorInterface
             return $value;
         }
 
-        // ADR-010 + T-030: every union descriptor is discriminated — the
-        // generator refuses undiscriminated ref unions, so this branch is
-        // always taken for valid inputs.
-        assert($discriminator instanceof Discriminator, 'union descriptor missing #[Discriminator] (ADR-010)');
+        // attribute-and-phpdoc-driven-serialization + T-030: every union
+        // descriptor is discriminated — the generator refuses
+        // undiscriminated ref unions, so this branch is always taken for
+        // valid inputs.
+        assert($discriminator instanceof Discriminator, 'union descriptor missing #[Discriminator] (attribute-and-phpdoc-driven-serialization)');
 
         $branch = $this->branchFromDiscriminator($value, $discriminator);
 

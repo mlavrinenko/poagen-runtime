@@ -11,7 +11,7 @@ use Throwable;
 /**
  * The contract the per-profile `Generated\ApiException` satisfies.
  *
- * ADR-009 keeps that exception in the emitted tree, so a project consuming
+ * `error-response-policy` keeps that exception in the emitted tree, so a project consuming
  * two vendors' APIs can tell one failure from the other by type. The runtime
  * still has to be able to construct it, which is what this declares: a
  * constructor the {@see ErrorFactoryInterface} can call and the accessors a

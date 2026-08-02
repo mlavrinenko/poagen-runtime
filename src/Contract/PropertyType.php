@@ -8,7 +8,8 @@ namespace Mlavrinenko\Paogen\Runtime\Contract;
  * One value-shape descriptor used by the {@see Marshaller} and {@see Hydrator}
  * to (de)serialise a single Model property. A flat tagged union — `kind` plus
  * the optional fields that kind needs — keeps reflection output and runtime
- * dispatch in a single small object per property. See ADR-010.
+ * dispatch in a single small object per property. See
+ * `attribute-and-phpdoc-driven-serialization`.
  */
 final readonly class PropertyType
 {
