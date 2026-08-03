@@ -11,10 +11,12 @@ use Mlavrinenko\Paogen\Runtime\Contract\XmlWriterInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Message\StreamInterface;
 
 use function http_build_query;
 use function is_array;
 use function is_object;
+use function is_string;
 use function json_encode;
 use function rtrim;
 
@@ -60,7 +62,34 @@ final readonly class PsrRequestBuilder
 
         return $request
             ->withHeader('Content-Type', $body->contentType())
-            ->withBody($this->streamFactory->createStream($this->encode($body)));
+            ->withBody($this->stream($body));
+    }
+
+    /**
+     * The body as a stream.
+     *
+     * A payload that is already a `StreamInterface` — which is what
+     * {@see Endpoint::binary()} accepts and nothing else produces — is handed
+     * to the request as it stands. Nothing on this path casts it to a string
+     * or calls `getContents()`, so a file upload reaches the PSR-18 client as
+     * the handle the caller opened and is read in whatever chunks that client
+     * chooses. Loading it whole would be a property of paogen rather than of
+     * the document, and the document says nothing about the size of a
+     * `format: binary` body.
+     *
+     * Every other kind is encoded to a string first, because JSON, XML and
+     * form encoding each need the entire value before they can emit any of
+     * it — there is nothing to stream.
+     */
+    private function stream(EndpointBody $body): StreamInterface
+    {
+        $payload = $body->payload;
+
+        if ($payload instanceof StreamInterface) {
+            return $payload;
+        }
+
+        return $this->streamFactory->createStream($this->encode($body));
     }
 
     private function encode(EndpointBody $body): string
@@ -75,10 +104,22 @@ final readonly class PsrRequestBuilder
                 $body->itemElement,
             ),
             EndpointBody::KIND_FORM => http_build_query($this->fields($body), '', '&', PHP_QUERY_RFC1738),
+            // A text body is the wire form already. KIND_BINARY only reaches
+            // here when its payload is not a stream, which `Endpoint::binary()`
+            // cannot produce — sending the string is still truer than encoding
+            // it as JSON.
+            EndpointBody::KIND_TEXT, EndpointBody::KIND_BINARY => $this->text($body),
             // KIND_JSON_RAW: the schema declared an object with no properties,
             // so the caller already holds the wire shape.
             default => $this->toJson($this->fields($body)),
         };
+    }
+
+    private function text(EndpointBody $body): string
+    {
+        $payload = $body->payload;
+
+        return is_string($payload) ? $payload : '';
     }
 
     /**

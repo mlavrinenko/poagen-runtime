@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Mlavrinenko\Paogen\Runtime\Contract;
 
+use DateTimeImmutable;
+use Mlavrinenko\Paogen\Runtime\ScalarBinding;
+
 /**
  * The shape an operation was promised back, named by the emitted method and
  * honoured by the {@see TransportInterface}.
@@ -28,6 +31,18 @@ final readonly class ResponseType
 
     /** A list of Models, each hydrated. */
     public const string KIND_LIST = 'list';
+
+    /**
+     * A list of scalars, decoded and converted item by item. No model class
+     * is involved, which is what separates it from KIND_LIST.
+     */
+    public const string KIND_SCALAR_LIST = 'scalar_list';
+
+    /** A date or date-time string, as a `\DateTimeImmutable`. */
+    public const string KIND_DATETIME = 'datetime';
+
+    /** A scalar wrapped by a `ScalarBinding` value object. */
+    public const string KIND_SCALAR_BINDING = 'scalar_binding';
 
     /** A scalar, cast from the raw body without decoding. */
     public const string KIND_SCALAR = 'scalar';
@@ -161,6 +176,60 @@ final readonly class ResponseType
     {
         /** @var self<array<string, TValue>> $type */
         $type = new self(self::KIND_MAP, value: $value);
+
+        return $type;
+    }
+
+    /**
+     * A list of scalars, each shaped by `$item`.
+     *
+     * The list kinds are deliberately two rather than one: `listOf()` names a
+     * model class and hydrates, and there is no class to name when the
+     * document declared `items: {type: string}`. Sharing one kind would have
+     * meant a nullable model on every list and a runtime branch on it.
+     *
+     * @template TItem
+     *
+     * @param self<TItem> $item
+     *
+     * @return self<list<TItem>>
+     */
+    public static function scalarListOf(self $item): self
+    {
+        /** @var self<list<TItem>> $type */
+        $type = new self(self::KIND_SCALAR_LIST, value: $item);
+
+        return $type;
+    }
+
+    /**
+     * A date or date-time string. Mirrors what a model property annotated
+     * with the same `format` already hydrates to, so the two cannot disagree.
+     *
+     * @return self<DateTimeImmutable>
+     */
+    public static function dateTime(): self
+    {
+        /** @var self<DateTimeImmutable> $type */
+        $type = new self(self::KIND_DATETIME);
+
+        return $type;
+    }
+
+    /**
+     * A scalar the consumer bound to a value object of their own via
+     * `#[BindsFormat]` + `ScalarBinding`.
+     *
+     * @template TVo of ScalarBinding
+     *
+     * @param class-string<TVo> $vo
+     *
+     * @return self<TVo>
+     */
+    public static function binding(string $vo): self
+    {
+        /** @var self<TVo> $type */
+        $type = new self(self::KIND_SCALAR_BINDING, model: $vo);
 
         return $type;
     }

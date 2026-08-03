@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Mlavrinenko\Paogen\Runtime\Http;
 
+use DateTimeImmutable;
 use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\ResponseType;
+use Mlavrinenko\Paogen\Runtime\ScalarBinding;
 use Psr\Http\Message\ResponseInterface;
 
 use function assert;
 use function is_array;
+use function is_string;
 use function json_decode;
 
 use const JSON_THROW_ON_ERROR;
@@ -56,11 +59,69 @@ final readonly class ResponseDecoder
         return match ($expected->kind) {
             ResponseType::KIND_OBJECT => $this->model($data, $expected),
             ResponseType::KIND_LIST => $this->listOf($data, $expected),
+            ResponseType::KIND_SCALAR_LIST => $this->scalarList($data, $expected),
             ResponseType::KIND_MAP => $this->map($data, $expected),
+            ResponseType::KIND_DATETIME => $this->dateTime($data),
+            ResponseType::KIND_SCALAR_BINDING => $this->scalarBinding($data, $expected),
             // KIND_MIXED: the document left the shape unconstrained, so the
             // decoded body is the answer.
             default => $data,
         };
+    }
+
+    /**
+     * A list of scalars: decoded, then each item shaped by the item type.
+     *
+     * Nothing is hydrated, because there is no class to hydrate into — the
+     * document declared `items: {type: string}`, and a string is already the
+     * value the caller was promised.
+     *
+     * @param ResponseType<mixed> $expected
+     *
+     * @return list<mixed>
+     */
+    private function scalarList(mixed $data, ResponseType $expected): array
+    {
+        assert(is_array($data));
+        $itemType = $expected->value;
+        $out = [];
+
+        foreach ($data as $item) {
+            $out[] = $itemType instanceof ResponseType ? $this->value($item, $itemType) : $item;
+        }
+
+        return $out;
+    }
+
+    /**
+     * A date or date-time string. The same one-line conversion the Hydrator
+     * applies to a model property carrying the same `format`, so a `date` in
+     * a response list and a `date` on a property cannot drift apart.
+     */
+    private function dateTime(mixed $value): DateTimeImmutable
+    {
+        if ($value instanceof DateTimeImmutable) {
+            return $value;
+        }
+
+        assert(is_string($value));
+
+        return new DateTimeImmutable($value);
+    }
+
+    /**
+     * @param ResponseType<mixed> $expected
+     */
+    private function scalarBinding(mixed $value, ResponseType $expected): ScalarBinding
+    {
+        /** @var class-string<ScalarBinding> $class */
+        $class = $expected->model;
+
+        if ($value instanceof $class) {
+            return $value;
+        }
+
+        return $class::fromScalar($value);
     }
 
     private function scalar(ResponseInterface $response, string $type): string|int|float|bool
