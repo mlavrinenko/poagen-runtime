@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mlavrinenko\Paogen\Runtime\Marshal;
 
 use Mlavrinenko\Paogen\Runtime\Attribute\AdditionalProperties;
+use Mlavrinenko\Paogen\Runtime\Attribute\BranchSelector;
 use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
 use Mlavrinenko\Paogen\Runtime\Attribute\Format;
 use Mlavrinenko\Paogen\Runtime\Attribute\WireName;
@@ -130,6 +131,7 @@ final class DescriptorParser implements DescriptorParserInterface
             $type,
             $discriminator,
             $this->attributeValue($parameter, AdditionalProperties::class) !== null,
+            $this->attributeValue($parameter, BranchSelector::class),
         );
     }
 
