@@ -8,7 +8,6 @@ use BackedEnum;
 use DateTimeImmutable;
 use LogicException;
 use Mlavrinenko\Paogen\Runtime\AdditionalPropertyBag;
-use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
 use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\PropertyDescriptor;
@@ -59,7 +58,7 @@ final readonly class Hydrator implements HydratorInterface
                 continue;
             }
 
-            $args[$descriptor->phpName] = $this->decode($data[$descriptor->wireName], $descriptor->type, $descriptor->discriminator);
+            $args[$descriptor->phpName] = $this->decode($data[$descriptor->wireName], $descriptor->type, $descriptor, $data);
         }
 
         if ($extras instanceof PropertyDescriptor) {
@@ -100,7 +99,17 @@ final readonly class Hydrator implements HydratorInterface
         return $descriptor->type->kind === PropertyType::KIND_BAG ? new AdditionalPropertyBag($out) : $out;
     }
 
-    private function decode(mixed $value, PropertyType $type, ?Discriminator $discriminator = null): mixed
+    /**
+     * `$owner` and `$parent` travel together and only matter to a union: the
+     * descriptor carries the branch-selection rule the generator computed, and
+     * `$parent` is the payload that rule reads when the tag sits on a sibling
+     * rather than inside the value. Both are passed down through lists and
+     * maps unchanged, so a `list<Dog|Cat>` resolves by the same rule its
+     * property declared rather than by a different one a level down.
+     *
+     * @param array<mixed> $parent
+     */
+    private function decode(mixed $value, PropertyType $type, ?PropertyDescriptor $owner = null, array $parent = []): mixed
     {
         if ($value === null) {
             return null;
@@ -112,9 +121,9 @@ final readonly class Hydrator implements HydratorInterface
             PropertyType::KIND_ENUM => $this->decodeEnum($value, $type),
             PropertyType::KIND_MODEL => $this->decodeModel($value, $type),
             PropertyType::KIND_SCALAR_BINDING => $this->decodeScalarBinding($value, $type),
-            PropertyType::KIND_UNION => $this->decodeUnion($value, $type, $discriminator),
-            PropertyType::KIND_LIST => $this->decodeList($value, $type),
-            PropertyType::KIND_MAP => $this->decodeMap($value, $type),
+            PropertyType::KIND_UNION => $this->decodeUnion($value, $owner, $parent),
+            PropertyType::KIND_LIST => $this->decodeList($value, $type, $owner, $parent),
+            PropertyType::KIND_MAP => $this->decodeMap($value, $type, $owner, $parent),
             default => $value,
         };
     }
@@ -169,74 +178,59 @@ final readonly class Hydrator implements HydratorInterface
         return $class::fromScalar($value);
     }
 
-    private function decodeUnion(mixed $value, PropertyType $type, ?Discriminator $discriminator): mixed
+    /**
+     * Exactly one branch, or an exception. {@see UnionBranchPicker} holds the
+     * rule; what matters here is that there is no third outcome — no first
+     * branch taken as a fallback, no null slipping through as the decoded
+     * value. `declare-an-undiscriminated-union-as-raw-data` makes computing a
+     * branch at generation time safe precisely by making the leftovers loud.
+     *
+     * @param array<mixed> $parent
+     */
+    private function decodeUnion(mixed $value, ?PropertyDescriptor $owner, array $parent): mixed
     {
         if (!is_array($value)) {
             return $value;
         }
 
-        // attribute-and-phpdoc-driven-serialization + T-030: every union
-        // descriptor is discriminated — the generator refuses
-        // undiscriminated ref unions, so this branch is always taken for
-        // valid inputs.
-        assert($discriminator instanceof Discriminator, 'union descriptor missing #[Discriminator] (attribute-and-phpdoc-driven-serialization)');
-
-        $branch = $this->branchFromDiscriminator($value, $discriminator);
-
-        if ($branch === null) {
-            $branch = $type->branches[0] ?? throw new LogicException('union descriptor has no branches');
+        if (!$owner instanceof PropertyDescriptor) {
+            throw new LogicException('union descriptor reached the hydrator without its property descriptor');
         }
 
-        return $this->hydrate($branch, $value);
+        return $this->hydrate(UnionBranchPicker::pick($value, $parent, $owner), $value);
     }
 
     /**
-     * @param array<mixed> $value
+     * @param array<mixed> $parent
      *
-     * @return class-string|null
-     */
-    private function branchFromDiscriminator(array $value, Discriminator $discriminator): ?string
-    {
-        if (!array_key_exists($discriminator->field, $value)) {
-            return null;
-        }
-
-        $tag = $value[$discriminator->field];
-
-        if (!is_string($tag)) {
-            return null;
-        }
-
-        return $discriminator->map[$tag] ?? null;
-    }
-
-    /**
      * @return list<mixed>
      */
-    private function decodeList(mixed $value, PropertyType $type): array
+    private function decodeList(mixed $value, PropertyType $type, ?PropertyDescriptor $owner, array $parent): array
     {
         assert(is_array($value));
         $itemType = $type->itemType ?? PropertyType::passthrough();
         $out = [];
 
         foreach ($value as $item) {
-            $out[] = $this->decode($item, $itemType);
+            $out[] = $this->decode($item, $itemType, $owner, $parent);
         }
 
         return $out;
     }
 
     /**
+     * @param array<mixed> $parent
+     *
      * @return array<string, mixed>
      */
-    private function decodeMap(mixed $value, PropertyType $type): array
+    private function decodeMap(mixed $value, PropertyType $type, ?PropertyDescriptor $owner, array $parent): array
     {
         assert(is_array($value));
         $valueType = $type->itemType ?? PropertyType::passthrough();
         $out = [];
 
         foreach ($value as $key => $item) {
-            $out[(string) $key] = $this->decode($item, $valueType);
+            $out[(string) $key] = $this->decode($item, $valueType, $owner, $parent);
         }
 
         return $out;
