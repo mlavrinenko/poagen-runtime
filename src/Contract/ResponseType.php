@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Mlavrinenko\Paogen\Runtime\Contract;
 
 use DateTimeImmutable;
+use Mlavrinenko\Paogen\Runtime\Attribute\BranchSelector;
+use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
+use Mlavrinenko\Paogen\Runtime\Marshal\UnionBranchPicker;
 use Mlavrinenko\Paogen\Runtime\ScalarBinding;
 
 /**
@@ -54,15 +57,35 @@ final readonly class ResponseType
     public const string KIND_MIXED = 'mixed';
 
     /**
+     * A response whose whole body is one of several Models — hydrated into
+     * whichever branch {@see UnionBranchPicker}
+     * names, the same picker a union-typed property already uses. See
+     * `a-union-response-selects-its-branch`.
+     *
+     * Nested inside a {@see mapOf()} or {@see scalarListOf()} value the same
+     * way a scalar item already can, which is how a response whose body is
+     * an array of union items (`activity/list-stargazers-for-repo`) is
+     * expressed without a sixth kind: a list whose item shape happens to be
+     * a union rather than a bare scalar.
+     */
+    public const string KIND_UNION = 'union';
+
+    /**
      * @param class-string|null $model  set for KIND_OBJECT and KIND_LIST
      * @param string            $scalar the PHP type for KIND_SCALAR: `string`, `int`, `float` or `bool`
      * @param self<mixed>|null  $value  the value shape for KIND_MAP
+     * @param Discriminator|null $discriminator set for KIND_UNION when the branch is picked by a tag
+     * @param BranchSelector|null $selector     set for KIND_UNION when the branch is picked structurally
+     * @param string             $label         set for KIND_UNION — names the union in a picking failure's message
      */
     private function __construct(
         public string $kind,
         public ?string $model = null,
         public string $scalar = '',
         public ?self $value = null,
+        public ?Discriminator $discriminator = null,
+        public ?BranchSelector $selector = null,
+        public string $label = '',
     ) {}
 
     /**
@@ -230,6 +253,23 @@ final readonly class ResponseType
     {
         /** @var self<TVo> $type */
         $type = new self(self::KIND_SCALAR_BINDING, model: $vo);
+
+        return $type;
+    }
+
+    /**
+     * A response body — or a list item, nested inside {@see scalarListOf()} —
+     * that is one of several Models, picked exactly the way a union-typed
+     * property already is: a tag, or a field only one branch declares.
+     * Exactly one of `$discriminator`/`$selector` is set, matching the
+     * generator's own invariant that a union it resolved always carries one.
+     *
+     * @return self<object>
+     */
+    public static function union(?Discriminator $discriminator, ?BranchSelector $selector, string $label): self
+    {
+        /** @var self<object> $type */
+        $type = new self(self::KIND_UNION, discriminator: $discriminator, selector: $selector, label: $label);
 
         return $type;
     }

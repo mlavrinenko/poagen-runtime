@@ -6,7 +6,10 @@ namespace Mlavrinenko\Paogen\Runtime\Http;
 
 use DateTimeImmutable;
 use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
+use Mlavrinenko\Paogen\Runtime\Contract\PropertyDescriptor;
+use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
 use Mlavrinenko\Paogen\Runtime\Contract\ResponseType;
+use Mlavrinenko\Paogen\Runtime\Marshal\UnionBranchPicker;
 use Mlavrinenko\Paogen\Runtime\ScalarBinding;
 use Psr\Http\Message\ResponseInterface;
 
@@ -63,10 +66,36 @@ final readonly class ResponseDecoder
             ResponseType::KIND_MAP => $this->map($data, $expected),
             ResponseType::KIND_DATETIME => $this->dateTime($data),
             ResponseType::KIND_SCALAR_BINDING => $this->scalarBinding($data, $expected),
+            ResponseType::KIND_UNION => $this->union($data, $expected),
             // KIND_MIXED: the document left the shape unconstrained, so the
             // decoded body is the answer.
             default => $data,
         };
+    }
+
+    /**
+     * Exactly one branch, or an exception — {@see UnionBranchPicker} holds
+     * the rule, the same one a union-typed property's `Hydrator::decodeUnion`
+     * applies. A response has no enclosing payload for a tag to sit on, so
+     * `$parent` is always empty; every `Discriminator` this class ever
+     * builds carries `onParent: false` for exactly that reason, and
+     * `UnionBranchPicker` never reads `$parent` when it does.
+     *
+     * @param ResponseType<mixed> $expected
+     */
+    private function union(mixed $data, ResponseType $expected): object
+    {
+        assert(is_array($data));
+        $owner = new PropertyDescriptor(
+            phpName: '',
+            wireName: $expected->label,
+            type: PropertyType::passthrough(),
+            discriminator: $expected->discriminator,
+            selector: $expected->selector,
+        );
+        $branch = UnionBranchPicker::pick($data, [], $owner);
+
+        return $this->hydrator->hydrate($branch, $data);
     }
 
     /**
