@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mlavrinenko\Paogen\Runtime\Contract;
 
 use BackedEnum;
+use Psr\Http\Message\StreamInterface;
 use Stringable;
 
 use function implode;
@@ -206,6 +207,23 @@ final class Endpoint
     public function form(array $fields): self
     {
         return $this->withBody(new EndpointBody(EndpointBody::KIND_FORM, $fields));
+    }
+
+    /**
+     * Text sent verbatim under `$contentType`.
+     */
+    public function text(string $text, string $contentType): self
+    {
+        return $this->withBody(new EndpointBody(EndpointBody::KIND_TEXT, $text, mediaType: $contentType));
+    }
+
+    /**
+     * Bytes, as the stream the caller opened. The stream travels to the
+     * request unread, so an upload is never materialised as a PHP string.
+     */
+    public function binary(StreamInterface $stream, string $contentType): self
+    {
+        return $this->withBody(new EndpointBody(EndpointBody::KIND_BINARY, $stream, mediaType: $contentType));
     }
 
     public function httpMethod(): string
