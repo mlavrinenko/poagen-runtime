@@ -7,6 +7,7 @@ namespace Mlavrinenko\Paogen\Runtime\Marshal;
 use BackedEnum;
 use DateTimeImmutable;
 use LogicException;
+use Mlavrinenko\Paogen\Runtime\AdditionalPropertyBag;
 use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
 use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
@@ -71,14 +72,21 @@ final readonly class Hydrator implements HydratorInterface
     /**
      * Every key no declared property claimed, decoded as the schema typed the
      * extra values. A declared property always wins the key it names, so the
-     * bag never shadows one.
+     * extras never shadow one: `$claimed` is filled from every declared
+     * descriptor before this runs, whether or not the payload carried that key.
+     *
+     * Two carriers, one collection pass. A schema that typed its extra values
+     * gets the typed map `declared-shapes-become-types` asks for; a schema
+     * that only said `additionalProperties: true` gets
+     * {@see AdditionalPropertyBag}, because there is no declared value type to
+     * make a typed map out of.
      *
      * @param array<mixed>       $data
      * @param array<string,true> $claimed
      *
-     * @return array<string, mixed>
+     * @return array<string, mixed>|AdditionalPropertyBag
      */
-    private function extras(array $data, array $claimed, PropertyDescriptor $descriptor): array
+    private function extras(array $data, array $claimed, PropertyDescriptor $descriptor): array|AdditionalPropertyBag
     {
         $valueType = $descriptor->type->itemType ?? PropertyType::passthrough();
         $out = [];
@@ -89,7 +97,7 @@ final readonly class Hydrator implements HydratorInterface
             }
         }
 
-        return $out;
+        return $descriptor->type->kind === PropertyType::KIND_BAG ? new AdditionalPropertyBag($out) : $out;
     }
 
     private function decode(mixed $value, PropertyType $type, ?Discriminator $discriminator = null): mixed

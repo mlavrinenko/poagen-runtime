@@ -6,6 +6,7 @@ namespace Mlavrinenko\Paogen\Runtime\Marshal;
 
 use BackedEnum;
 use DateTimeInterface;
+use Mlavrinenko\Paogen\Runtime\AdditionalPropertyBag;
 use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\MarshallerInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
@@ -45,9 +46,14 @@ final readonly class Marshaller implements MarshallerInterface
 
             // Extra keys are keys of the payload, not one key holding a map,
             // so they go back out beside the declared properties rather than
-            // nested under a name of their own.
+            // nested under a name of their own. A bag unwraps to the array it
+            // was built from, in arrival order, which is what makes the round
+            // trip stable rather than merely lossless.
             if ($descriptor->additional) {
-                $extras = $this->encodeMap($value, $descriptor->type);
+                $extras = $this->encodeMap(
+                    $value instanceof AdditionalPropertyBag ? $value->toArray() : $value,
+                    $descriptor->type,
+                );
                 continue;
             }
 

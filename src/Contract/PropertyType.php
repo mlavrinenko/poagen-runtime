@@ -21,6 +21,7 @@ final readonly class PropertyType
     public const string KIND_UNION = 'union';
     public const string KIND_LIST = 'list';
     public const string KIND_MAP = 'map';
+    public const string KIND_BAG = 'bag';
 
     /**
      * @param class-string|null    $class    enum FQCN, model FQCN, or VO FQCN depending on kind
@@ -84,5 +85,16 @@ final readonly class PropertyType
     public static function mapOf(self $valueType): self
     {
         return new self(self::KIND_MAP, itemType: $valueType);
+    }
+
+    /**
+     * The untyped extras bag — `additionalProperties: true`, where the
+     * document allowed extra keys and declared nothing about their values. It
+     * carries no `itemType` because there is no declared value type to carry;
+     * see {@see AdditionalPropertyBag}.
+     */
+    public static function bag(): self
+    {
+        return new self(self::KIND_BAG);
     }
 }

@@ -6,6 +6,7 @@ namespace Mlavrinenko\Paogen\Runtime\Marshal;
 
 use BackedEnum;
 use DateTimeInterface;
+use Mlavrinenko\Paogen\Runtime\AdditionalPropertyBag;
 use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
 use Mlavrinenko\Paogen\Runtime\ScalarBinding;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
@@ -86,6 +87,15 @@ final class PropertyTypeResolver
     private static function resolveClassType(string $name, ?string $format): PropertyType
     {
         /** @var class-string $name */
+        if (is_a($name, AdditionalPropertyBag::class, true)) {
+            // Not a Model: it has no wire names of its own and is never
+            // hydrated field by field. The extras branch of the Hydrator
+            // builds it, so it needs a kind of its own rather than falling
+            // through to KIND_MODEL, which would go looking for a `values`
+            // key in the payload.
+            return PropertyType::bag();
+        }
+
         if (is_subclass_of($name, BackedEnum::class)) {
             return PropertyType::enum($name);
         }
