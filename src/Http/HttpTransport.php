@@ -9,10 +9,12 @@ use Http\Discovery\Psr18ClientDiscovery;
 use Mlavrinenko\Paogen\Runtime\Contract\ApiErrorInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\Endpoint;
+use Mlavrinenko\Paogen\Runtime\Contract\Envelope;
 use Mlavrinenko\Paogen\Runtime\Contract\ErrorFactoryInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\MarshallerInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\ResponseType;
+use Mlavrinenko\Paogen\Runtime\Contract\StatusResponseMap;
 use Mlavrinenko\Paogen\Runtime\Contract\TransportInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\XmlWriterInterface;
 use Mlavrinenko\Paogen\Runtime\Marshal\DescriptorParser;
@@ -21,9 +23,14 @@ use Mlavrinenko\Paogen\Runtime\Marshal\Marshaller;
 use Mlavrinenko\Paogen\Runtime\Marshal\XmlWriter;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Throwable;
 
+use function assert;
 use function is_string;
+use function sprintf;
 
 /**
  * The transport a generated client gets when the consumer supplies nothing
@@ -95,13 +102,52 @@ final class HttpTransport implements TransportInterface
     {
         $request = $this->requests->build($endpoint);
         $response = $this->client()->sendRequest($request);
-        $status = $response->getStatusCode();
 
-        if ($status < 200 || $status >= 300) {
-            throw $this->errors->errorFor($status, $request, $response);
+        if ($expected->kind === ResponseType::KIND_ENVELOPE) {
+            /** @var T */
+            return $this->envelope($request, $response, $expected);
         }
 
         return $this->decoder->decode($response, $expected);
+    }
+
+    /**
+     * The status decides which declared body to hydrate, never whether to
+     * throw (`typed-error-responses`): {@see StatusResponseMap::match()}
+     * carries OpenAPI's own precedence, and only a status matching nothing
+     * there — or a matched body that fails to hydrate — reaches
+     * {@see ErrorFactoryInterface}.
+     *
+     * @return Envelope<mixed>
+     */
+    private function envelope(RequestInterface $request, ResponseInterface $response, ResponseType $expected): Envelope
+    {
+        $status = $response->getStatusCode();
+        $statuses = $expected->statuses;
+        assert($statuses instanceof StatusResponseMap);
+        $matched = $statuses->match($status);
+
+        if ($matched === null) {
+            throw $this->errors->errorFor(
+                $status,
+                $request,
+                $response,
+                sprintf('no exact, range or default response declared for status %d', $status),
+            );
+        }
+
+        try {
+            $body = $this->decoder->decode($response, $matched);
+        } catch (Throwable $e) {
+            throw $this->errors->errorFor(
+                $status,
+                $request,
+                $response,
+                sprintf('the declared body for status %d failed to hydrate: %s', $status, $e->getMessage()),
+            );
+        }
+
+        return new Envelope($status, $body, $response);
     }
 
     private function client(): ClientInterface
