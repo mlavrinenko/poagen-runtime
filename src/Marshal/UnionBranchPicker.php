@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Poagen\Runtime\Marshal;
 
+use Poagen\Runtime\Attribute\BranchSelector;
+use Poagen\Runtime\Attribute\Discriminator;
+use Poagen\Runtime\Contract\PropertyDescriptor;
+
 use function array_key_exists;
 use function array_keys;
 use function array_values;
@@ -36,17 +40,17 @@ final readonly class UnionBranchPicker
      *
      * @return class-string
      */
-    public static function pick(array $value, array $parent, \Poagen\Runtime\Contract\PropertyDescriptor $owner): string
+    public static function pick(array $value, array $parent, PropertyDescriptor $owner): string
     {
         $discriminator = $owner->discriminator;
 
-        if ($discriminator instanceof \Poagen\Runtime\Attribute\Discriminator) {
+        if ($discriminator instanceof Discriminator) {
             return self::byTag($value, $parent, $owner->wireName, $discriminator);
         }
 
         $selector = $owner->selector;
 
-        if ($selector instanceof \Poagen\Runtime\Attribute\BranchSelector) {
+        if ($selector instanceof BranchSelector) {
             return self::byStructure($value, $owner->wireName, $selector);
         }
 
@@ -59,7 +63,7 @@ final readonly class UnionBranchPicker
      *
      * @return class-string
      */
-    private static function byTag(array $value, array $parent, string $property, \Poagen\Runtime\Attribute\Discriminator $discriminator): string
+    private static function byTag(array $value, array $parent, string $property, Discriminator $discriminator): string
     {
         $source = $discriminator->onParent ? $parent : $value;
         $mapped = array_keys($discriminator->map);
@@ -88,7 +92,7 @@ final readonly class UnionBranchPicker
      *
      * @return class-string
      */
-    private static function byStructure(array $value, string $property, \Poagen\Runtime\Attribute\BranchSelector $selector): string
+    private static function byStructure(array $value, string $property, BranchSelector $selector): string
     {
         /** @var array<class-string,true> $matched */
         $matched = [];
@@ -120,7 +124,7 @@ final readonly class UnionBranchPicker
     /**
      * @return list<string>
      */
-    private static function candidates(\Poagen\Runtime\Attribute\BranchSelector $selector): array
+    private static function candidates(BranchSelector $selector): array
     {
         $out = array_values($selector->fields);
 

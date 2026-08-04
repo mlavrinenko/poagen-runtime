@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Poagen\Runtime\Http;
 
+use Poagen\Runtime\Contract\ApiErrorInterface;
+use Poagen\Runtime\Contract\ErrorFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
@@ -16,10 +18,10 @@ use Throwable;
  * class that is, so it is named once — where the transport is wired — and
  * this turns it into an instance.
  */
-final readonly class ApiExceptionFactory implements \Poagen\Runtime\Contract\ErrorFactoryInterface
+final readonly class ApiExceptionFactory implements ErrorFactoryInterface
 {
     /**
-     * @param class-string<\Poagen\Runtime\Contract\ApiErrorInterface> $exceptionClass the profile's `Generated\ApiException`
+     * @param class-string<ApiErrorInterface> $exceptionClass the profile's `Generated\ApiException`
      */
     public function __construct(private string $exceptionClass) {}
 
