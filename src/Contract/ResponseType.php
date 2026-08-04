@@ -7,8 +7,8 @@ namespace Mlavrinenko\Paogen\Runtime\Contract;
 use DateTimeImmutable;
 use Mlavrinenko\Paogen\Runtime\Attribute\BranchSelector;
 use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
-use Mlavrinenko\Paogen\Runtime\Marshal\UnionBranchPicker;
 use Mlavrinenko\Paogen\Runtime\ScalarBinding;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * The shape an operation was promised back, named by the emitted method and
@@ -23,55 +23,8 @@ use Mlavrinenko\Paogen\Runtime\ScalarBinding;
  *
  * @template-covariant T
  */
-final readonly class ResponseType
+final readonly class ResponseType implements ResponseTypeKind
 {
-    /** No body is read; the operation returns `void`. */
-    public const string KIND_NOTHING = 'nothing';
-
-    /** One Model, hydrated from the decoded body. */
-    public const string KIND_OBJECT = 'object';
-
-    /** A list of Models, each hydrated. */
-    public const string KIND_LIST = 'list';
-
-    /**
-     * A list of scalars, decoded and converted item by item. No model class
-     * is involved, which is what separates it from KIND_LIST.
-     */
-    public const string KIND_SCALAR_LIST = 'scalar_list';
-
-    /** A date or date-time string, as a `\DateTimeImmutable`. */
-    public const string KIND_DATETIME = 'datetime';
-
-    /** A scalar wrapped by a `ScalarBinding` value object. */
-    public const string KIND_SCALAR_BINDING = 'scalar_binding';
-
-    /** A scalar, cast from the raw body without decoding. */
-    public const string KIND_SCALAR = 'scalar';
-
-    /** A map of values, decoded and returned as-is. */
-    public const string KIND_MAP = 'map';
-
-    /** A value the document left unconstrained: decoded and returned as-is. */
-    public const string KIND_MIXED = 'mixed';
-
-    /**
-     * A response whose whole body is one of several Models — hydrated into
-     * whichever branch {@see UnionBranchPicker}
-     * names, the same picker a union-typed property already uses. See
-     * `a-union-response-selects-its-branch`.
-     *
-     * Nested inside a {@see mapOf()} or {@see scalarListOf()} value the same
-     * way a scalar item already can, which is how a response whose body is
-     * an array of union items (`activity/list-stargazers-for-repo`) is
-     * expressed without a sixth kind: a list whose item shape happens to be
-     * a union rather than a bare scalar.
-     */
-    public const string KIND_UNION = 'union';
-
-    /** The whole per-status resolution of one operation — {@see Envelope}. */
-    public const string KIND_ENVELOPE = 'envelope';
-
     /**
      * @param class-string|null $model  set for KIND_OBJECT and KIND_LIST
      * @param string            $scalar the PHP type for KIND_SCALAR: `string`, `int`, `float` or `bool`
@@ -186,6 +139,19 @@ final readonly class ResponseType
     {
         /** @var self<mixed> $type */
         $type = new self(self::KIND_MIXED);
+
+        return $type;
+    }
+
+    /**
+     * A binary body, handed back exactly as the transport produced it.
+     *
+     * @return self<StreamInterface>
+     */
+    public static function stream(): self
+    {
+        /** @var self<StreamInterface> $type */
+        $type = new self(self::KIND_STREAM);
 
         return $type;
     }

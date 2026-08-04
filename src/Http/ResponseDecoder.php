@@ -23,10 +23,11 @@ use const JSON_THROW_ON_ERROR;
 /**
  * Turns a successful response into the value the emitted method promised.
  *
- * Five shapes and no more, mirroring {@see ResponseType}: nothing, one
- * Model, a list of Models, a scalar read straight off the body, and a
- * decoded map. A schema produces one of these for every operation, which is
- * why an emitted method can name its return shape in one expression.
+ * Six shapes and no more, mirroring {@see ResponseType}: nothing, one
+ * Model, a list of Models, a scalar read straight off the body, a decoded
+ * map, and a binary stream handed back exactly as the transport produced it.
+ * A schema produces one of these for every operation, which is why an
+ * emitted method can name its return shape in one expression.
  *
  * @internal
  */
@@ -46,6 +47,10 @@ final readonly class ResponseDecoder
         return match ($expected->kind) {
             ResponseType::KIND_NOTHING => null,
             ResponseType::KIND_SCALAR => $this->scalar($response, $expected->scalar),
+            // The stream is the value — handing it back is the whole
+            // decode, and calling getBody() again never reads it, unlike
+            // decodeBody()'s (string) cast every other kind runs through.
+            ResponseType::KIND_STREAM => $response->getBody(),
             default => $this->value($this->decodeBody($response), $expected),
         };
     }
