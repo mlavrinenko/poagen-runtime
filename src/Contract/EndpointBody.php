@@ -46,9 +46,15 @@ final readonly class EndpointBody
 
     /**
      * @param object|list<object>|array<string, mixed>|string $payload
-     * @param string                                          $mediaType the content type to send, for the kinds
-     *                                                                   that read it off the document rather than
-     *                                                                   implying it: KIND_TEXT and KIND_BINARY
+     * @param string                                          $mediaType        the content type to send, for the
+     *                                                                          kinds that read it off the document
+     *                                                                          rather than implying it: KIND_TEXT
+     *                                                                          and KIND_BINARY
+     * @param array<string,string>                            $nestedContainers item-schema property wire name →
+     *                                                                          repeated child element name, set
+     *                                                                          for KIND_XML_LIST when
+     *                                                                          {@see Endpoint::xmlList()} carried
+     *                                                                          one
      */
     public function __construct(
         public string $kind,
@@ -56,6 +62,7 @@ final readonly class EndpointBody
         public string $rootElement = '',
         public string $itemElement = '',
         public string $mediaType = '',
+        public array $nestedContainers = [],
     ) {}
 
     public function contentType(): string

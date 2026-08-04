@@ -102,6 +102,7 @@ final readonly class PsrRequestBuilder
                 $this->marshalMany($body),
                 $body->rootElement,
                 $body->itemElement,
+                $body->nestedContainers,
             ),
             EndpointBody::KIND_FORM => http_build_query($this->fields($body), '', '&', PHP_QUERY_RFC1738),
             // A text body is the wire form already. KIND_BINARY only reaches

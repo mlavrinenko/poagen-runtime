@@ -188,13 +188,15 @@ final class Endpoint
 
     /**
      * A list of Models sent as XML: `$itemElement` repeated inside
-     * `$rootElement`.
+     * `$rootElement`. `$nestedContainers` is `Profile::$xmlElements`'s
+     * validated binding, passed straight through to whichever writer renders.
      *
-     * @param list<object> $models
+     * @param list<object>         $models
+     * @param array<string,string> $nestedContainers
      */
-    public function xmlList(array $models, string $rootElement, string $itemElement): self
+    public function xmlList(array $models, string $rootElement, string $itemElement, array $nestedContainers = []): self
     {
-        return $this->withBody(new EndpointBody(EndpointBody::KIND_XML_LIST, $models, $rootElement, $itemElement));
+        return $this->withBody(new EndpointBody(EndpointBody::KIND_XML_LIST, $models, $rootElement, $itemElement, nestedContainers: $nestedContainers));
     }
 
     /**
