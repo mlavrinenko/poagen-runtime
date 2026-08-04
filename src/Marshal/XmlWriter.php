@@ -38,9 +38,38 @@ use function is_string;
  * name, which is why they are constructor arguments rather than guesses: a wrong
  * root element produces XML the vendor's parser rejects, and rejecting it at
  * generation time with a question is cheaper than at runtime with a 400.
+ *
+ * A vendor can also want a nested array *wrapped* rather than unwrapped: one
+ * container element (named after the property, the same default every other
+ * property gets) holding several repeated children, instead of the property's
+ * own name repeated as siblings. `$nestedContainers` is that opt-in, read only
+ * for a property whose marshalled value is itself a list. It is keyed by the
+ * tag name of the element the property sits directly inside — `renderObject`'s
+ * `$rootElement`, each of `renderList`'s `$itemElement` repeats, or (recursively)
+ * a container or item element this same map already named one level up — so one
+ * property name can mean "unwrap" under one element and "wrap, repeating a
+ * named child" under another, which is what lets two operations in the same
+ * document reuse a property name (kilbil's `inside`) for two different repeated
+ * children (`good`, `goodlist`). There is no code path that populates this from
+ * `Profile::$xmlElements` automatically — `Endpoint::xml()`/`xmlList()` already
+ * take exactly the arguments the specification leaves open, root and item, and
+ * neither runtime/src/Contract nor runtime/src/Http changes for this — so a
+ * consumer who wants nesting builds the map themselves from the profile's
+ * `'<operationId>.item.<property>'` entries (the generator validates those
+ * against the schema; it does not wire them anywhere) and passes it to this
+ * constructor when they build their own `HttpTransport`. Empty by default, so
+ * a body that needs no nesting renders exactly as it always has.
  */
 final readonly class XmlWriter implements XmlWriterInterface
 {
+    /**
+     * @param array<string, array<string,string>> $nestedContainers enclosing element tag name → (property wire
+     *                                                               name → repeated child element name)
+     */
+    public function __construct(
+        private array $nestedContainers = [],
+    ) {}
+
     /**
      * Render a single object payload.
      *
@@ -51,7 +80,7 @@ final readonly class XmlWriter implements XmlWriterInterface
         $document = $this->newDocument();
         $root = $document->createElement($rootElement);
         $document->appendChild($root);
-        self::appendMap($document, $root, $data);
+        $this->appendMap($document, $root, $data);
 
         return (string) $document->saveXML();
     }
@@ -70,7 +99,7 @@ final readonly class XmlWriter implements XmlWriterInterface
         foreach ($items as $item) {
             $element = $document->createElement($itemElement);
             $root->appendChild($element);
-            self::appendMap($document, $element, $item);
+            $this->appendMap($document, $element, $item);
         }
 
         return (string) $document->saveXML();
@@ -91,14 +120,14 @@ final readonly class XmlWriter implements XmlWriterInterface
     /**
      * @param array<array-key,mixed> $data
      */
-    private static function appendMap(DOMDocument $document, DOMElement $parent, array $data): void
+    private function appendMap(DOMDocument $document, DOMElement $parent, array $data): void
     {
         foreach ($data as $name => $value) {
-            self::appendValue($document, $parent, (string) $name, $value);
+            $this->appendValue($document, $parent, (string) $name, $value);
         }
     }
 
-    private static function appendValue(DOMDocument $document, DOMElement $parent, string $name, mixed $value): void
+    private function appendValue(DOMDocument $document, DOMElement $parent, string $name, mixed $value): void
     {
         // An absent optional property is absent from the document rather than an
         // empty element: `<price/>` and "no price" mean different things to a
@@ -108,25 +137,33 @@ final readonly class XmlWriter implements XmlWriterInterface
         }
 
         if (is_array($value)) {
-            self::appendArray($document, $parent, $name, $value);
+            $this->appendArray($document, $parent, $name, $value);
 
             return;
         }
 
         $element = $document->createElement($name);
-        $element->appendChild($document->createTextNode(self::scalar($value)));
+        $element->appendChild($document->createTextNode($this->scalar($value)));
         $parent->appendChild($element);
     }
 
     /**
      * @param array<array-key,mixed> $value
      */
-    private static function appendArray(DOMDocument $document, DOMElement $parent, string $name, array $value): void
+    private function appendArray(DOMDocument $document, DOMElement $parent, string $name, array $value): void
     {
         if (array_is_list($value)) {
+            $child = $this->nestedContainers[$parent->tagName][$name] ?? null;
+
+            if (is_string($child) && $child !== '') {
+                $this->appendNestedContainer($document, $parent, $name, $child, $value);
+
+                return;
+            }
+
             // Unwrapped, per the OpenAPI default: the element repeats.
             foreach ($value as $item) {
-                self::appendValue($document, $parent, $name, $item);
+                $this->appendValue($document, $parent, $name, $item);
             }
 
             return;
@@ -134,10 +171,34 @@ final readonly class XmlWriter implements XmlWriterInterface
 
         $element = $document->createElement($name);
         $parent->appendChild($element);
-        self::appendMap($document, $element, $value);
+        $this->appendMap($document, $element, $value);
     }
 
-    private static function scalar(mixed $value): string
+    /**
+     * One `$name` container, holding one `$childElement` per entry — the
+     * vendor's alternative to the unwrapped default, opted into per property
+     * through `$nestedContainers`.
+     *
+     * @param list<mixed> $entries
+     */
+    private function appendNestedContainer(
+        DOMDocument $document,
+        DOMElement $parent,
+        string $name,
+        string $childElement,
+        array $entries,
+    ): void {
+        $container = $document->createElement($name);
+        $parent->appendChild($container);
+
+        foreach ($entries as $entry) {
+            $child = $document->createElement($childElement);
+            $container->appendChild($child);
+            $this->appendMap($document, $child, is_array($entry) ? $entry : []);
+        }
+    }
+
+    private function scalar(mixed $value): string
     {
         if (is_bool($value)) {
             // `true`/`false` rather than `1`/`0`: the same spelling
