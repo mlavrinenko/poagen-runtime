@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Http;
+namespace Poagen\Runtime\Http;
 
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
-use Mlavrinenko\Paogen\Runtime\Contract\ApiErrorInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\Endpoint;
-use Mlavrinenko\Paogen\Runtime\Contract\Envelope;
-use Mlavrinenko\Paogen\Runtime\Contract\ErrorFactoryInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\MarshallerInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\ResponseType;
-use Mlavrinenko\Paogen\Runtime\Contract\StatusResponseMap;
-use Mlavrinenko\Paogen\Runtime\Contract\TransportInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\XmlWriterInterface;
-use Mlavrinenko\Paogen\Runtime\Marshal\DescriptorParser;
-use Mlavrinenko\Paogen\Runtime\Marshal\Hydrator;
-use Mlavrinenko\Paogen\Runtime\Marshal\Marshaller;
-use Mlavrinenko\Paogen\Runtime\Marshal\XmlWriter;
+use Poagen\Runtime\Contract\ApiErrorInterface;
+use Poagen\Runtime\Contract\DescriptorParserInterface;
+use Poagen\Runtime\Contract\Endpoint;
+use Poagen\Runtime\Contract\Envelope;
+use Poagen\Runtime\Contract\ErrorFactoryInterface;
+use Poagen\Runtime\Contract\HydratorInterface;
+use Poagen\Runtime\Contract\MarshallerInterface;
+use Poagen\Runtime\Contract\ResponseType;
+use Poagen\Runtime\Contract\StatusResponseMap;
+use Poagen\Runtime\Contract\TransportInterface;
+use Poagen\Runtime\Contract\XmlWriterInterface;
+use Poagen\Runtime\Marshal\DescriptorParser;
+use Poagen\Runtime\Marshal\Hydrator;
+use Poagen\Runtime\Marshal\Marshaller;
+use Poagen\Runtime\Marshal\XmlWriter;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;

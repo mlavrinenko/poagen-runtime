@@ -2,16 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Marshal;
+namespace Poagen\Runtime\Marshal;
 
-use Mlavrinenko\Paogen\Runtime\Attribute\AdditionalProperties;
-use Mlavrinenko\Paogen\Runtime\Attribute\BranchSelector;
-use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
-use Mlavrinenko\Paogen\Runtime\Attribute\Format;
-use Mlavrinenko\Paogen\Runtime\Attribute\WireName;
-use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\PropertyDescriptor;
-use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Lexer\Lexer;
 use PHPStan\PhpDocParser\Parser\ConstExprParser;
@@ -19,6 +11,14 @@ use PHPStan\PhpDocParser\Parser\PhpDocParser;
 use PHPStan\PhpDocParser\Parser\TokenIterator;
 use PHPStan\PhpDocParser\Parser\TypeParser;
 use PHPStan\PhpDocParser\ParserConfig;
+use Poagen\Runtime\Attribute\AdditionalProperties;
+use Poagen\Runtime\Attribute\BranchSelector;
+use Poagen\Runtime\Attribute\Discriminator;
+use Poagen\Runtime\Attribute\Format;
+use Poagen\Runtime\Attribute\WireName;
+use Poagen\Runtime\Contract\DescriptorParserInterface;
+use Poagen\Runtime\Contract\PropertyDescriptor;
+use Poagen\Runtime\Contract\PropertyType;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionParameter;

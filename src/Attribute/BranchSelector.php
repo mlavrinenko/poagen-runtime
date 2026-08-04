@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Attribute;
+namespace Poagen\Runtime\Attribute;
 
 use Attribute;
-use Mlavrinenko\Paogen\Runtime\Marshal\UnionBranchException;
+use Poagen\Runtime\Marshal\UnionBranchException;
 
 /**
  * Property-level: how to pick a branch of a PHP union type when the document
@@ -24,7 +24,7 @@ use Mlavrinenko\Paogen\Runtime\Marshal\UnionBranchException;
  * properties of its own. Such a branch accepts `{}` and nothing else, which
  * makes it decidable by the absence of fields where every other branch here is
  * decidable by their presence. GitHub's `empty-object` is the case, and is the
- * only branch schema of the fifty-two paogen measured across both large vendor
+ * only branch schema of the fifty-two poagen measured across both large vendor
  * documents that declares a closed shape.
  *
  * A payload matching no branch, or more than one, raises

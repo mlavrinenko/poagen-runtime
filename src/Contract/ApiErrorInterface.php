@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Contract;
+namespace Poagen\Runtime\Contract;
 
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -26,7 +26,7 @@ use Throwable;
  * best-effort re-parse of the wire.
  *
  * Catching this instead of the generated class works too, and is the way to
- * write one handler that covers every paogen client in a project.
+ * write one handler that covers every poagen client in a project.
  */
 interface ApiErrorInterface extends Throwable
 {

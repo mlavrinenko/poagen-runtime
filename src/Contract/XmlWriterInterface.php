@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Contract;
+namespace Poagen\Runtime\Contract;
 
 /**
  * Renders a marshalled payload as an XML document.

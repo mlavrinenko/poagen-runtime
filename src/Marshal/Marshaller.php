@@ -2,15 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Marshal;
+namespace Poagen\Runtime\Marshal;
 
 use BackedEnum;
 use DateTimeInterface;
-use Mlavrinenko\Paogen\Runtime\AdditionalPropertyBag;
-use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\MarshallerInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
-use Mlavrinenko\Paogen\Runtime\ScalarBinding;
 use ReflectionClass;
 
 use function assert;
@@ -25,10 +20,10 @@ use function is_object;
  * result is intended to be passed
  * directly to `json_encode(..., JSON_THROW_ON_ERROR)`.
  */
-final readonly class Marshaller implements MarshallerInterface
+final readonly class Marshaller implements \Poagen\Runtime\Contract\MarshallerInterface
 {
     public function __construct(
-        private DescriptorParserInterface $descriptors = new DescriptorParser(),
+        private \Poagen\Runtime\Contract\DescriptorParserInterface $descriptors = new DescriptorParser(),
     ) {}
 
     /**
@@ -51,7 +46,7 @@ final readonly class Marshaller implements MarshallerInterface
             // trip stable rather than merely lossless.
             if ($descriptor->additional) {
                 $extras = $this->encodeMap(
-                    $value instanceof AdditionalPropertyBag ? $value->toArray() : $value,
+                    $value instanceof \Poagen\Runtime\AdditionalPropertyBag ? $value->toArray() : $value,
                     $descriptor->type,
                 );
                 continue;
@@ -65,25 +60,25 @@ final readonly class Marshaller implements MarshallerInterface
         return $out + $extras;
     }
 
-    private function encode(mixed $value, PropertyType $type): mixed
+    private function encode(mixed $value, \Poagen\Runtime\Contract\PropertyType $type): mixed
     {
         if ($value === null) {
             return null;
         }
 
         return match ($type->kind) {
-            PropertyType::KIND_PASSTHROUGH => $value,
-            PropertyType::KIND_DATETIME => $this->encodeDateTime($value, $type),
-            PropertyType::KIND_ENUM => $this->encodeEnum($value),
-            PropertyType::KIND_MODEL, PropertyType::KIND_UNION => $this->encodeModel($value),
-            PropertyType::KIND_SCALAR_BINDING => $this->encodeScalarBinding($value),
-            PropertyType::KIND_LIST => $this->encodeList($value, $type),
-            PropertyType::KIND_MAP => $this->encodeMap($value, $type),
+            \Poagen\Runtime\Contract\PropertyType::KIND_PASSTHROUGH => $value,
+            \Poagen\Runtime\Contract\PropertyType::KIND_DATETIME => $this->encodeDateTime($value, $type),
+            \Poagen\Runtime\Contract\PropertyType::KIND_ENUM => $this->encodeEnum($value),
+            \Poagen\Runtime\Contract\PropertyType::KIND_MODEL, \Poagen\Runtime\Contract\PropertyType::KIND_UNION => $this->encodeModel($value),
+            \Poagen\Runtime\Contract\PropertyType::KIND_SCALAR_BINDING => $this->encodeScalarBinding($value),
+            \Poagen\Runtime\Contract\PropertyType::KIND_LIST => $this->encodeList($value, $type),
+            \Poagen\Runtime\Contract\PropertyType::KIND_MAP => $this->encodeMap($value, $type),
             default => $value,
         };
     }
 
-    private function encodeDateTime(mixed $value, PropertyType $type): string
+    private function encodeDateTime(mixed $value, \Poagen\Runtime\Contract\PropertyType $type): string
     {
         assert($value instanceof DateTimeInterface);
         $format = $type->format === 'date' ? 'Y-m-d' : DateTimeInterface::RFC3339;
@@ -104,7 +99,7 @@ final readonly class Marshaller implements MarshallerInterface
             return $value;
         }
 
-        if ($value instanceof ScalarBinding) {
+        if ($value instanceof \Poagen\Runtime\ScalarBinding) {
             return $value->toScalar();
         }
 
@@ -113,7 +108,7 @@ final readonly class Marshaller implements MarshallerInterface
 
     private function encodeScalarBinding(mixed $value): string|int|float|bool
     {
-        assert($value instanceof ScalarBinding);
+        assert($value instanceof \Poagen\Runtime\ScalarBinding);
 
         return $value->toScalar();
     }
@@ -121,10 +116,10 @@ final readonly class Marshaller implements MarshallerInterface
     /**
      * @return list<mixed>
      */
-    private function encodeList(mixed $value, PropertyType $type): array
+    private function encodeList(mixed $value, \Poagen\Runtime\Contract\PropertyType $type): array
     {
         assert(is_array($value));
-        $itemType = $type->itemType ?? PropertyType::passthrough();
+        $itemType = $type->itemType ?? \Poagen\Runtime\Contract\PropertyType::passthrough();
         $out = [];
 
         foreach ($value as $item) {
@@ -137,10 +132,10 @@ final readonly class Marshaller implements MarshallerInterface
     /**
      * @return array<string, mixed>
      */
-    private function encodeMap(mixed $value, PropertyType $type): array
+    private function encodeMap(mixed $value, \Poagen\Runtime\Contract\PropertyType $type): array
     {
         assert(is_array($value));
-        $valueType = $type->itemType ?? PropertyType::passthrough();
+        $valueType = $type->itemType ?? \Poagen\Runtime\Contract\PropertyType::passthrough();
         $out = [];
 
         foreach ($value as $key => $item) {

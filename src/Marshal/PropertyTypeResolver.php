@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Marshal;
+namespace Poagen\Runtime\Marshal;
 
 use BackedEnum;
 use DateTimeInterface;
-use Mlavrinenko\Paogen\Runtime\AdditionalPropertyBag;
-use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
-use Mlavrinenko\Paogen\Runtime\ScalarBinding;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
+use Poagen\Runtime\AdditionalPropertyBag;
+use Poagen\Runtime\Contract\PropertyType;
+use Poagen\Runtime\ScalarBinding;
 use ReflectionNamedType;
 use ReflectionType;
 use ReflectionUnionType;

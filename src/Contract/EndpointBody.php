@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Contract;
+namespace Poagen\Runtime\Contract;
 
 /**
  * What an {@see Endpoint} carries as its request body, and how it is meant

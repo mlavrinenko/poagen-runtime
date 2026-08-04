@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Contract;
+namespace Poagen\Runtime\Contract;
 
-use Mlavrinenko\Paogen\Runtime\Marshal\UnionBranchPicker;
+use Poagen\Runtime\Marshal\UnionBranchPicker;
 
 /**
  * Every shape {@see ResponseType} can name.

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Http;
+namespace Poagen\Runtime\Http;
 
-use Mlavrinenko\Paogen\Runtime\Contract\Endpoint;
-use Mlavrinenko\Paogen\Runtime\Contract\EndpointBody;
-use Mlavrinenko\Paogen\Runtime\Contract\MarshallerInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\XmlWriterInterface;
+use Poagen\Runtime\Contract\Endpoint;
+use Poagen\Runtime\Contract\EndpointBody;
+use Poagen\Runtime\Contract\MarshallerInterface;
+use Poagen\Runtime\Contract\XmlWriterInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -73,7 +73,7 @@ final readonly class PsrRequestBuilder
      * to the request as it stands. Nothing on this path casts it to a string
      * or calls `getContents()`, so a file upload reaches the PSR-18 client as
      * the handle the caller opened and is read in whatever chunks that client
-     * chooses. Loading it whole would be a property of paogen rather than of
+     * chooses. Loading it whole would be a property of poagen rather than of
      * the document, and the document says nothing about the size of a
      * `format: binary` body.
      *

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Contract;
+namespace Poagen\Runtime\Contract;
 
-use Mlavrinenko\Paogen\Runtime\Http\HttpTransport;
+use Poagen\Runtime\Http\HttpTransport;
 
 use function array_map;
 
@@ -47,11 +47,11 @@ final readonly class StatusResponseMap
     public array $ranges;
 
     /**
-     * @param list<array{0: string, 1: ResponseType<mixed>|null}> $exact   exact status text as the document
+     * @param list<array{0: string, 1: ResponseType<mixed>|null}> $exact exact status text as the document
      *                                                                     spells it — `'200'`, `'403'`
-     * @param list<array{0: string, 1: ResponseType<mixed>|null}> $ranges  range keys as the document spells
+     * @param list<array{0: string, 1: ResponseType<mixed>|null}> $ranges range keys as the document spells
      *                                                                     them — `'4XX'`, `'5XX'`
-     * @param ResponseType<mixed>|null                            $default the `default` entry, if the document declared one
+     * @param ResponseType<mixed>|null $default the `default` entry, if the document declared one
      */
     public function __construct(
         array $exact = [],

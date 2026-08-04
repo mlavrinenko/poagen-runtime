@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Marshal;
+namespace Poagen\Runtime\Marshal;
 
 use ReflectionMethod;
 

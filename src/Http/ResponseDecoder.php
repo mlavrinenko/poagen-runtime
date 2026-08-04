@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Http;
+namespace Poagen\Runtime\Http;
 
 use DateTimeImmutable;
-use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\PropertyDescriptor;
-use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
-use Mlavrinenko\Paogen\Runtime\Contract\ResponseType;
-use Mlavrinenko\Paogen\Runtime\Marshal\UnionBranchPicker;
-use Mlavrinenko\Paogen\Runtime\ScalarBinding;
+use Poagen\Runtime\Contract\HydratorInterface;
+use Poagen\Runtime\Contract\PropertyDescriptor;
+use Poagen\Runtime\Contract\PropertyType;
+use Poagen\Runtime\Contract\ResponseType;
+use Poagen\Runtime\Marshal\UnionBranchPicker;
+use Poagen\Runtime\ScalarBinding;
 use Psr\Http\Message\ResponseInterface;
 
 use function assert;

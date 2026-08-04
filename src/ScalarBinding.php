@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime;
+namespace Poagen\Runtime;
 
 /**
  * Opt-in contract that makes a `#[BindsFormat]` value object transparent at

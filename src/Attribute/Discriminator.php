@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Attribute;
+namespace Poagen\Runtime\Attribute;
 
 use Attribute;
-use Mlavrinenko\Paogen\Runtime\Marshal\UnionBranchException;
+use Poagen\Runtime\Marshal\UnionBranchException;
 
 /**
  * Property-level: the wire field whose value selects a branch of a PHP union

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime;
+namespace Poagen\Runtime;
 
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
-use Mlavrinenko\Paogen\Runtime\Attribute\AdditionalProperties;
+use Poagen\Runtime\Attribute\AdditionalProperties;
 use Traversable;
 
 use function array_key_exists;

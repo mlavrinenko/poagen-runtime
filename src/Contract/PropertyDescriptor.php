@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Contract;
-
-use Mlavrinenko\Paogen\Runtime\Attribute\BranchSelector;
-use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
+namespace Poagen\Runtime\Contract;
 
 /**
  * One Model property's wire <-> PHP mapping. Built once per class by
@@ -20,7 +17,7 @@ final readonly class PropertyDescriptor
      *                                        them through `additionalProperties` without
      *                                        naming them, so there is no wire name to look
      *                                        one up by and $wireName is not read for it
-     * @param BranchSelector|null $selector   how to pick a union branch when no tag exists;
+     * @param \Poagen\Runtime\Attribute\BranchSelector|null $selector how to pick a union branch when no tag exists;
      *                                        mutually exclusive with $discriminator, and the
      *                                        two together are the only ways a union-typed
      *                                        property ever names a branch
@@ -30,8 +27,8 @@ final readonly class PropertyDescriptor
         public string $phpName,
         public string $wireName,
         public PropertyType $type,
-        public ?Discriminator $discriminator = null,
+        public ?\Poagen\Runtime\Attribute\Discriminator $discriminator = null,
         public bool $additional = false,
-        public ?BranchSelector $selector = null,
+        public ?\Poagen\Runtime\Attribute\BranchSelector $selector = null,
     ) {}
 }

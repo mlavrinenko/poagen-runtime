@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Contract;
+namespace Poagen\Runtime\Contract;
 
 /**
  * One value-shape descriptor used by the {@see Marshaller} and {@see Hydrator}

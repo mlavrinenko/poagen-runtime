@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Attribute;
+namespace Poagen\Runtime\Attribute;
 
 use Attribute;
 

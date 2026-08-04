@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Marshal;
+namespace Poagen\Runtime\Marshal;
 
 use BackedEnum;
 use DateTimeImmutable;
 use LogicException;
-use Mlavrinenko\Paogen\Runtime\AdditionalPropertyBag;
-use Mlavrinenko\Paogen\Runtime\Contract\DescriptorParserInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\HydratorInterface;
-use Mlavrinenko\Paogen\Runtime\Contract\PropertyDescriptor;
-use Mlavrinenko\Paogen\Runtime\Contract\PropertyType;
-use Mlavrinenko\Paogen\Runtime\ScalarBinding;
+use Poagen\Runtime\AdditionalPropertyBag;
+use Poagen\Runtime\Contract\DescriptorParserInterface;
+use Poagen\Runtime\Contract\HydratorInterface;
+use Poagen\Runtime\Contract\PropertyDescriptor;
+use Poagen\Runtime\Contract\PropertyType;
+use Poagen\Runtime\ScalarBinding;
 
 use function array_key_exists;
 use function assert;

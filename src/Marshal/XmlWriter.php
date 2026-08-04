@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Marshal;
+namespace Poagen\Runtime\Marshal;
 
 use DOMDocument;
 use DOMElement;
 use InvalidArgumentException;
-use Mlavrinenko\Paogen\Runtime\Contract\XmlWriterInterface;
 
 use function is_array;
 use function is_bool;
@@ -63,7 +62,7 @@ use function is_string;
  * Empty by default, so a body that needs no nesting renders exactly as it
  * always has.
  */
-final readonly class XmlWriter implements XmlWriterInterface
+final readonly class XmlWriter implements \Poagen\Runtime\Contract\XmlWriterInterface
 {
     /**
      * @param array<string, array<string,string>> $nestedContainers enclosing element tag name → (property wire

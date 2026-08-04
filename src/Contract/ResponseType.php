@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Mlavrinenko\Paogen\Runtime\Contract;
+namespace Poagen\Runtime\Contract;
 
 use DateTimeImmutable;
-use Mlavrinenko\Paogen\Runtime\Attribute\BranchSelector;
-use Mlavrinenko\Paogen\Runtime\Attribute\Discriminator;
-use Mlavrinenko\Paogen\Runtime\ScalarBinding;
+use Poagen\Runtime\Attribute\BranchSelector;
+use Poagen\Runtime\Attribute\Discriminator;
+use Poagen\Runtime\ScalarBinding;
 use Psr\Http\Message\StreamInterface;
 
 /**
@@ -30,9 +30,9 @@ final readonly class ResponseType implements ResponseTypeKind
      * @param string            $scalar the PHP type for KIND_SCALAR: `string`, `int`, `float` or `bool`
      * @param self<mixed>|null  $value  the value shape for KIND_MAP
      * @param Discriminator|null $discriminator set for KIND_UNION when the branch is picked by a tag
-     * @param BranchSelector|null $selector     set for KIND_UNION when the branch is picked structurally
+     * @param BranchSelector|null $selector set for KIND_UNION when the branch is picked structurally
      * @param string             $label         set for KIND_UNION — names the union in a picking failure's message
-     * @param StatusResponseMap|null $statuses  set for KIND_ENVELOPE
+     * @param StatusResponseMap|null $statuses set for KIND_ENVELOPE
      */
     private function __construct(
         public string $kind,
@@ -213,7 +213,7 @@ final readonly class ResponseType implements ResponseTypeKind
      * A scalar the consumer bound to a value object of their own via
      * `#[BindsFormat]` + `ScalarBinding`.
      *
-     * @template TVo of ScalarBinding
+     * @template TVo of \Poagen\Runtime\ScalarBinding
      *
      * @param class-string<TVo> $vo
      *
