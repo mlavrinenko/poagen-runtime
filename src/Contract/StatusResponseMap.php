@@ -6,6 +6,8 @@ namespace Mlavrinenko\Paogen\Runtime\Contract;
 
 use Mlavrinenko\Paogen\Runtime\Http\HttpTransport;
 
+use function array_map;
+
 /**
  * Every response one operation's document declared, matched by OpenAPI's own
  * precedence: an exact status code wins, then a range key such as `4XX`,
@@ -25,17 +27,54 @@ use Mlavrinenko\Paogen\Runtime\Http\HttpTransport;
 final readonly class StatusResponseMap
 {
     /**
-     * @param list<array{0: string, 1: ResponseType<mixed>}> $exact   exact status text as the document
-     *                                                                spells it — `'200'`, `'403'`
-     * @param list<array{0: string, 1: ResponseType<mixed>}> $ranges  range keys as the document spells
-     *                                                                them — `'4XX'`, `'5XX'`
-     * @param ResponseType<mixed>|null                       $default the `default` entry, if the document declared one
+     * A pair's second element may arrive `null` — shorthand the emitter uses
+     * for a declared status whose body is empty, since the pair's presence
+     * in `$exact`/`$ranges` already says the status is declared. Normalised
+     * to {@see ResponseType::nothing()} in the constructor, immediately, so
+     * these two never actually hold a `null` and {@see match()} does not
+     * have to know the shorthand exists: `null` keeps meaning exactly one
+     * thing on the path a caller reads, "not in this map at all" —
+     * `$default` carries that same meaning natively, which is why the
+     * shorthand applies only inside a pair and not there.
+     *
+     * @var list<array{0: string, 1: ResponseType<mixed>}>
+     */
+    public array $exact;
+
+    /**
+     * @var list<array{0: string, 1: ResponseType<mixed>}>
+     */
+    public array $ranges;
+
+    /**
+     * @param list<array{0: string, 1: ResponseType<mixed>|null}> $exact   exact status text as the document
+     *                                                                     spells it — `'200'`, `'403'`
+     * @param list<array{0: string, 1: ResponseType<mixed>|null}> $ranges  range keys as the document spells
+     *                                                                     them — `'4XX'`, `'5XX'`
+     * @param ResponseType<mixed>|null                            $default the `default` entry, if the document declared one
      */
     public function __construct(
-        public array $exact = [],
-        public array $ranges = [],
+        array $exact = [],
+        array $ranges = [],
         public ?ResponseType $default = null,
-    ) {}
+    ) {
+        $this->exact = $this->normalise($exact);
+        $this->ranges = $this->normalise($ranges);
+    }
+
+    /**
+     * @param list<array{0: string, 1: ResponseType<mixed>|null}> $pairs
+     *
+     * @return list<array{0: string, 1: ResponseType<mixed>}>
+     */
+    private function normalise(array $pairs): array
+    {
+        return array_map(
+            /** @param array{0: string, 1: ResponseType<mixed>|null} $pair */
+            static fn(array $pair): array => [$pair[0], $pair[1] ?? ResponseType::nothing()],
+            $pairs,
+        );
+    }
 
     /**
      * `null` means the wire sent a status this map has no exact, range or
