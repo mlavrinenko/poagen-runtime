@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMElement;
 use InvalidArgumentException;
 use Mlavrinenko\Paogen\Runtime\Contract\XmlWriterInterface;
+use Mlavrinenko\Paogen\Runtime\Http\PsrRequestBuilder;
 
 use function is_array;
 use function is_bool;
@@ -50,15 +51,17 @@ use function is_string;
  * property name can mean "unwrap" under one element and "wrap, repeating a
  * named child" under another, which is what lets two operations in the same
  * document reuse a property name (kilbil's `inside`) for two different repeated
- * children (`good`, `goodlist`). There is no code path that populates this from
- * `Profile::$xmlElements` automatically — `Endpoint::xml()`/`xmlList()` already
- * take exactly the arguments the specification leaves open, root and item, and
- * neither runtime/src/Contract nor runtime/src/Http changes for this — so a
- * consumer who wants nesting builds the map themselves from the profile's
- * `'<operationId>.item.<property>'` entries (the generator validates those
- * against the schema; it does not wire them anywhere) and passes it to this
- * constructor when they build their own `HttpTransport`. Empty by default, so
- * a body that needs no nesting renders exactly as it always has.
+ * children (`good`, `goodlist`). This constructor is still the only channel that
+ * carries the map — that has not changed — but a generated `Endpoint::xmlList()`
+ * call now populates it itself, from the same `'<operationId>.item.<property>'`
+ * entries of `Profile::$xmlElements` the generator already validates:
+ * {@see PsrRequestBuilder} builds one of these
+ * scoped to that call's `$itemElement` whenever the endpoint carried a
+ * non-empty map, so a consumer gets the nested shape by declaring the binding
+ * in the profile and nowhere else
+ * (thread-the-validated-nested-container-map-into-the-generated-client).
+ * Empty by default, so a body that needs no nesting renders exactly as it
+ * always has.
  */
 final readonly class XmlWriter implements XmlWriterInterface
 {
