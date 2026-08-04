@@ -14,13 +14,12 @@ use Mlavrinenko\Paogen\Runtime\ScalarBinding;
  * The shape an operation was promised back, named by the emitted method and
  * honoured by the {@see TransportInterface}.
  *
- * A schema yields five of these and no more: nothing at all, one Model, a
- * list of Models, a scalar, and a map of values the document declared
- * through `additionalProperties`. Carrying the shape as a value rather than
- * as five transport methods keeps the contract at one method to implement,
- * and keeps the emitted return type honest — the template parameter is what
- * static analysis reads to agree that `send()` gives back a `Pet` and not a
- * `mixed`.
+ * A method's own `send()` call names exactly one kind at the top level now:
+ * KIND_ENVELOPE, carrying the per-status resolution as a
+ * {@see StatusResponseMap}. Every other kind names one status's body inside
+ * that map, or nests the way a map's value already could — the template
+ * parameter is what static analysis reads to agree `send()` gives back an
+ * `Envelope<Pet>`, not `mixed`.
  *
  * @template-covariant T
  */
@@ -70,6 +69,9 @@ final readonly class ResponseType
      */
     public const string KIND_UNION = 'union';
 
+    /** The whole per-status resolution of one operation — {@see Envelope}. */
+    public const string KIND_ENVELOPE = 'envelope';
+
     /**
      * @param class-string|null $model  set for KIND_OBJECT and KIND_LIST
      * @param string            $scalar the PHP type for KIND_SCALAR: `string`, `int`, `float` or `bool`
@@ -77,6 +79,7 @@ final readonly class ResponseType
      * @param Discriminator|null $discriminator set for KIND_UNION when the branch is picked by a tag
      * @param BranchSelector|null $selector     set for KIND_UNION when the branch is picked structurally
      * @param string             $label         set for KIND_UNION — names the union in a picking failure's message
+     * @param StatusResponseMap|null $statuses  set for KIND_ENVELOPE
      */
     private function __construct(
         public string $kind,
@@ -86,6 +89,7 @@ final readonly class ResponseType
         public ?Discriminator $discriminator = null,
         public ?BranchSelector $selector = null,
         public string $label = '',
+        public ?StatusResponseMap $statuses = null,
     ) {}
 
     /**
@@ -270,6 +274,19 @@ final readonly class ResponseType
     {
         /** @var self<object> $type */
         $type = new self(self::KIND_UNION, discriminator: $discriminator, selector: $selector, label: $label);
+
+        return $type;
+    }
+
+    /**
+     * Every response an operation's document declared, as one value.
+     *
+     * @return self<Envelope<mixed>>
+     */
+    public static function envelope(StatusResponseMap $statuses): self
+    {
+        /** @var self<Envelope<mixed>> $type */
+        $type = new self(self::KIND_ENVELOPE, statuses: $statuses);
 
         return $type;
     }
