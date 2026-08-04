@@ -23,8 +23,11 @@ namespace Mlavrinenko\Paogen\Runtime\Contract;
  * Implementations must:
  *   - send the request the {@see Endpoint} describes, unchanged in what it
  *     says (path, query, headers, body);
- *   - throw for a response the API considers a failure, rather than
- *     returning a half-value;
+ *   - for a KIND_ENVELOPE `$expected` (what every generated method sends
+ *     now), throw only for a status the document declared no exact, range
+ *     or `default` response for, or a declared body that failed to
+ *     hydrate — never for a status it did describe, whatever the number
+ *     (`typed-error-responses`);
  *   - return exactly what the {@see ResponseType} promises, so the emitted
  *     method's declared return type stays true.
  */

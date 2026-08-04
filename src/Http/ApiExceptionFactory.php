@@ -25,10 +25,10 @@ final readonly class ApiExceptionFactory implements ErrorFactoryInterface
      */
     public function __construct(private string $exceptionClass) {}
 
-    public function errorFor(int $status, RequestInterface $request, ResponseInterface $response): Throwable
+    public function errorFor(int $status, RequestInterface $request, ResponseInterface $response, string $reason): Throwable
     {
         $class = $this->exceptionClass;
 
-        return new $class($status, $request, $response);
+        return new $class($status, $request, $response, $reason);
     }
 }

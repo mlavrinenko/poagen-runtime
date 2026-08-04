@@ -17,6 +17,14 @@ use Throwable;
  * constructor the {@see ErrorFactoryInterface} can call and the accessors a
  * caller reads afterwards.
  *
+ * The owner ruling behind `typed-error-responses` narrows what this is
+ * thrown for: a declared response is a return value now, hydrated onto an
+ * `Envelope`, so this survives only for a status the document did not
+ * describe at all, or a declared body that failed to hydrate. There is no
+ * `getDecodedBody(): mixed` any more — nothing here ever decoded a body — and
+ * `getReason()` replaces it, carrying why the transport raised rather than a
+ * best-effort re-parse of the wire.
+ *
  * Catching this instead of the generated class works too, and is the way to
  * write one handler that covers every paogen client in a project.
  */
@@ -26,6 +34,7 @@ interface ApiErrorInterface extends Throwable
         int $statusCode,
         RequestInterface $request,
         ResponseInterface $response,
+        string $reason,
         string $message = '',
     );
 
@@ -36,8 +45,9 @@ interface ApiErrorInterface extends Throwable
     public function getResponse(): ResponseInterface;
 
     /**
-     * Best-effort JSON decode of the response body, or `null` when the body
-     * is empty or not JSON.
+     * Why the transport raised: the status matched nothing the document
+     * declared, or matched a declared response whose body failed to
+     * hydrate.
      */
-    public function getDecodedBody(): mixed;
+    public function getReason(): string;
 }
