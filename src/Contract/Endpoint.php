@@ -189,7 +189,7 @@ final class Endpoint
     /**
      * A list of Models sent as XML: `$itemElement` repeated inside
      * `$rootElement`. `$nestedContainers` is `Profile::$xmlElements`'s
-     * validated nested-container binding, reaching the wire from here.
+     * validated binding, passed straight through to whichever writer renders.
      *
      * @param list<object>         $models
      * @param array<string,string> $nestedContainers

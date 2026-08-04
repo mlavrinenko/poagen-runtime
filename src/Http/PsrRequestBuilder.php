@@ -8,7 +8,6 @@ use Mlavrinenko\Paogen\Runtime\Contract\Endpoint;
 use Mlavrinenko\Paogen\Runtime\Contract\EndpointBody;
 use Mlavrinenko\Paogen\Runtime\Contract\MarshallerInterface;
 use Mlavrinenko\Paogen\Runtime\Contract\XmlWriterInterface;
-use Mlavrinenko\Paogen\Runtime\Marshal\XmlWriter;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -99,10 +98,11 @@ final readonly class PsrRequestBuilder
             EndpointBody::KIND_JSON => $this->toJson($this->marshalOne($body)),
             EndpointBody::KIND_JSON_LIST => $this->toJson($this->marshalMany($body)),
             EndpointBody::KIND_XML => $this->xmlWriter->renderObject($this->marshalOne($body), $body->rootElement),
-            EndpointBody::KIND_XML_LIST => $this->xmlListWriter($body)->renderList(
+            EndpointBody::KIND_XML_LIST => $this->xmlWriter->renderList(
                 $this->marshalMany($body),
                 $body->rootElement,
                 $body->itemElement,
+                $body->nestedContainers,
             ),
             EndpointBody::KIND_FORM => http_build_query($this->fields($body), '', '&', PHP_QUERY_RFC1738),
             // A text body is the wire form already. KIND_BINARY only reaches
@@ -121,28 +121,6 @@ final readonly class PsrRequestBuilder
         $payload = $body->payload;
 
         return is_string($payload) ? $payload : '';
-    }
-
-    /**
-     * The writer that renders a `KIND_XML_LIST` body.
-     *
-     * `Endpoint::xmlList()`'s `$nestedContainers` is validated
-     * profile guidance, keyed by property rather than by element name —
-     * {@see XmlWriter}'s own constructor is the only channel it reads that
-     * configuration through, so an operation that carries one gets its own
-     * writer, scoped to `$body->itemElement`, built for it here. Every other
-     * XML body — the overwhelming majority, and every body before this
-     * existed — carries an empty map and keeps using whichever
-     * {@see XmlWriterInterface} the transport holds, default or consumer
-     * substitute alike, byte for byte as before.
-     */
-    private function xmlListWriter(EndpointBody $body): XmlWriterInterface
-    {
-        if ($body->nestedContainers === []) {
-            return $this->xmlWriter;
-        }
-
-        return new XmlWriter([$body->itemElement => $body->nestedContainers]);
     }
 
     /**
