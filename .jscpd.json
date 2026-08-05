@@ -1,0 +1,5 @@
+{
+  "minTokens": 50,
+  "ignorePattern": ["(?m)^(declare|namespace|use)\\b.*;$"],
+  "reporters": ["console"]
+}

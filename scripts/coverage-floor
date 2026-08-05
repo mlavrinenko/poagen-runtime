@@ -1,0 +1,143 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * coverage-floor — read a Clover XML coverage report and enforce a
+ * statement-coverage floor per tier (coverage-floor-in-the-gate).
+ *
+ * A byte-for-byte copy of `../scripts/coverage-floor` (the monorepo root's),
+ * not a symlink or a require of it — see that copy's own comment for why
+ * (`bundle-the-runtime-package-with-its-own-ci-tooling`): a relative symlink
+ * out of `runtime/` would dangle once this directory is checked out on its
+ * own via `git subtree split --prefix=runtime`. Keep the two in sync by
+ * hand if the script's logic ever changes; only the `<tier-path>=<floor>`
+ * arguments differ at each call site (`runtime/composer.json`'s
+ * `test:coverage` passes one tier, `src=92.0`, where the root's passes two).
+ *
+ * This is lint-jscpd's ratchet run backwards: jscpd's `--threshold` caps a
+ * percentage that must only fall (duplication); this script floors a
+ * percentage that must only rise (coverage). The floor VALUES live where
+ * `--threshold 3.0` lives for jscpd — as arguments next to a RATCHET
+ * comment at the call site (see the Justfile's `test-coverage` recipe) —
+ * not in here, so this script stays generic over tier and floor and there
+ * is exactly one greppable place per number.
+ *
+ * Usage:
+ *   scripts/coverage-floor <clover.xml> <tier-path>=<floor> [<tier-path>=<floor> ...]
+ *
+ * <tier-path> is a directory prefix relative to this package's own root
+ * (e.g. "src"). Every <file> element in the clover report is assigned to
+ * the first configured tier whose prefix matches its path; a file matching
+ * no configured tier is ignored. That is also how this package would keep
+ * any future generated-code tier out of the figure without a separate
+ * exclude list — moot today, since this package emits nothing and
+ * `phpunit.xml.dist`'s `<source>` includes only `src/`.
+ *
+ * Exits 0 and prints one line per tier if every tier meets or exceeds its
+ * floor. Exits 1 and names every tier that fell short — the tier, the
+ * measured percentage, and the floor it missed — otherwise.
+ */
+
+$args = array_slice($argv, 1);
+
+if (count($args) < 2) {
+    fwrite(STDERR, "usage: coverage-floor <clover.xml> <tier-path>=<floor> [<tier-path>=<floor> ...]\n");
+    exit(2);
+}
+
+$cloverPath = array_shift($args);
+
+$floors = [];
+foreach ($args as $arg) {
+    if (!str_contains($arg, '=')) {
+        fwrite(STDERR, "coverage-floor: bad argument '{$arg}', expected <tier-path>=<floor>\n");
+        exit(2);
+    }
+    [$tier, $floor] = explode('=', $arg, 2);
+    $tier = rtrim($tier, '/');
+    if ($tier === '' || !is_numeric($floor)) {
+        fwrite(STDERR, "coverage-floor: bad argument '{$arg}', expected <tier-path>=<floor>\n");
+        exit(2);
+    }
+    $floors[$tier] = (float) $floor;
+}
+
+if (!is_file($cloverPath)) {
+    fwrite(STDERR, "coverage-floor: clover report not found at {$cloverPath} — run the coverage recipe first\n");
+    exit(2);
+}
+
+// Repo root is this script's parent directory, not getcwd(): the recipes
+// that invoke this run with cwd already at the repo root, but resolving it
+// from __DIR__ means the tier-path matching below is correct even if that
+// ever changes.
+$repoRoot = rtrim(dirname(__DIR__), '/');
+
+$doc = new DOMDocument();
+$doc->substituteEntities = false;
+if (!@$doc->load($cloverPath)) {
+    fwrite(STDERR, "coverage-floor: failed to parse {$cloverPath}\n");
+    exit(2);
+}
+
+$totals = array_fill_keys(array_keys($floors), ['statements' => 0, 'covered' => 0]);
+
+foreach ((new DOMXPath($doc))->query('//file[@name]') as $file) {
+    $absolute = $file->getAttribute('name');
+    $relative = str_starts_with($absolute, $repoRoot . '/')
+        ? substr($absolute, strlen($repoRoot) + 1)
+        : $absolute;
+
+    $tier = null;
+    foreach ($floors as $prefix => $_) {
+        if ($relative === $prefix || str_starts_with($relative, $prefix . '/')) {
+            $tier = $prefix;
+            break;
+        }
+    }
+    if ($tier === null) {
+        continue;
+    }
+
+    // A <file> carries a per-class <metrics> (inside each <class>) and one
+    // file-level <metrics> as its own direct child, emitted last. Only the
+    // direct child is the file total; summing the per-class ones too would
+    // double-count any multi-class file.
+    $metrics = null;
+    foreach ($file->childNodes as $child) {
+        if ($child->nodeName === 'metrics') {
+            $metrics = $child;
+        }
+    }
+    if ($metrics === null) {
+        continue;
+    }
+
+    $totals[$tier]['statements'] += (int) $metrics->getAttribute('statements');
+    $totals[$tier]['covered'] += (int) $metrics->getAttribute('coveredstatements');
+}
+
+$failures = [];
+foreach ($floors as $tier => $floor) {
+    $statements = $totals[$tier]['statements'];
+    $covered = $totals[$tier]['covered'];
+    $pct = $statements > 0 ? $covered / $statements * 100 : 0.0;
+
+    printf("coverage-floor: %-14s %6.2f%% (%d/%d statements) — floor %.1f%%\n", $tier . '/', $pct, $covered, $statements, $floor);
+
+    if ($pct < $floor) {
+        $failures[] = sprintf('%s: measured %.2f%%, below the %.1f%% floor', $tier, $pct, $floor);
+    }
+}
+
+if ($failures !== []) {
+    fwrite(STDERR, "coverage-floor: FAILED\n");
+    foreach ($failures as $failure) {
+        fwrite(STDERR, "  - {$failure}\n");
+    }
+    exit(1);
+}
+
+echo "coverage-floor: OK\n";

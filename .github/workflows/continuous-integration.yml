@@ -1,0 +1,102 @@
+# GitHub Actions Documentation: https://docs.github.com/en/actions
+#
+# GitHub only ever runs workflows it finds under a repository's OWN
+# `.github/workflows/` at its root, so this file is dormant while it lives
+# here, inside the poagen monorepo, at `runtime/.github/workflows/` — the
+# monorepo's own `.github/workflows/continuous-integration.yml` is what
+# actually gates `runtime/src` and `runtime/tests` today, as part of the
+# root `just check`. This file exists for the moment `git subtree split
+# --prefix=runtime` promotes this directory to be a standalone repository's
+# own root: from then on `runtime/.github/workflows/` becomes that repo's
+# `.github/workflows/`, and this workflow starts running for real, with the
+# generator absent (`bundle-the-runtime-package-with-its-own-ci-tooling`).
+# Every job below runs `composer <script>`, and every script it names is
+# defined in `../../composer.json` (relative to this file) — nothing here
+# assumes a monorepo root or a sibling `src/` outside this tree.
+
+name: "Continuous Integration"
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - "main"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: "Lint (cs-fixer, rector)"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.4"
+          coverage: "none"
+      - uses: "ramsey/composer-install@v3"
+      - name: "Check coding style (php-cs-fixer)"
+        run: "composer lint:cs-fixer"
+      - name: "Check refactorings (rector)"
+        run: "composer lint:rector"
+
+  static-analysis:
+    name: "Static analysis (PHPStan)"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.4"
+          coverage: "none"
+      - uses: "ramsey/composer-install@v3"
+      - run: "composer lint:phpstan"
+
+  unit-tests:
+    name: "Unit tests"
+    needs: ["lint", "static-analysis"]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.4"]
+        os: ["ubuntu-latest", "macos-latest"]
+        composer-deps: ["lowest", "highest"]
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php }}"
+          coverage: "none"
+      - uses: "ramsey/composer-install@v3"
+        with:
+          dependency-versions: "${{ matrix.composer-deps }}"
+      - run: "composer test"
+
+  # Runs the suite once, with coverage, and enforces the statement-coverage
+  # floor (coverage-floor-in-the-gate) — one floor, not two: this package
+  # has only one tier, `src/`. See `../../composer.json`'s `test:coverage`
+  # script and `../../Justfile`'s matching recipe for the instrumentation
+  # fix this relies on (PCOV needs `pcov.directory` set explicitly or it
+  # silently reports 0%) and the ratchet-only-moves-up rule on the floor
+  # value itself.
+  coverage:
+    name: "Coverage floor"
+    needs: ["lint", "static-analysis"]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.4"
+          coverage: "pcov"
+      - uses: "ramsey/composer-install@v3"
+        with:
+          dependency-versions: "highest"
+      - run: "composer test:coverage"

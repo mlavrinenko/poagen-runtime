@@ -1,0 +1,17 @@
+# Per-language line-count limits, scoped to this package alone. Mirrors
+# `../.linecop.yaml`'s limits exactly — see `quality-gates-at-maximum-
+# strictness` for why 250 lines of PHP is the bar the whole monorepo holds
+# to; this package inherits the number, not the file, since a `.linecop.yaml`
+# has no `include` mechanism to delegate to another one with.
+
+count_mode: code-comments
+
+limits:
+  PHP: 250
+  Markdown: 300
+
+exclude_dirs:
+  - vendor
+  - build
+  - .devbox
+  - .git

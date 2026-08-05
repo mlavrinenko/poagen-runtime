@@ -25,9 +25,23 @@
         "psr/http-factory": "^1.1",
         "psr/http-message": "^2.0"
     },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.92",
+        "nyholm/psr7": "^1.8",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^12.1",
+        "rector/rector": "^2.3"
+    },
     "autoload": {
         "psr-4": {
             "Poagen\\Runtime\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Poagen\\Runtime\\Tests\\": "tests/"
         }
     },
     "config": {
@@ -38,5 +52,22 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
+    "scripts": {
+        "lint": [
+            "@lint:cs-fixer",
+            "@lint:phpstan",
+            "@lint:rector"
+        ],
+        "lint:cs-fixer": "php-cs-fixer fix --diff --verbose --dry-run",
+        "lint:phpstan": "phpstan analyse --memory-limit=512M",
+        "lint:rector": "rector --dry-run",
+        "format": "php-cs-fixer fix --diff --verbose",
+        "format:rector": "rector",
+        "test": "phpunit",
+        "test:coverage": [
+            "env -u PHP_INI_SCAN_DIR php -d pcov.directory=. -d 'pcov.exclude=~(vendor|build)~' vendor/bin/phpunit --coverage-html build/coverage --coverage-clover build/logs/clover.xml",
+            "scripts/coverage-floor build/logs/clover.xml src=87.0"
+        ]
+    },
     "$schema": "https://getcomposer.org/schema.json"
 }

@@ -1,0 +1,22 @@
+# EditorConfig http://EditorConfig.org
+
+# top-most EditorConfig file. `root = true` here, same as `../.editorconfig`,
+# rather than relying on that one: within the monorepo EditorConfig would
+# keep climbing to it anyway (identical content, so no disagreement), but
+# `git subtree split --prefix=runtime` leaves this file with no parent
+# config to climb to at all, and a package that some future consumer
+# vendors as a path dependency should not go looking for one further up
+# either.
+root = true
+
+# This applies to all files
+[*]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml}]
+indent_size = 2

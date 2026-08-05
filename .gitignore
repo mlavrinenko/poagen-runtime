@@ -1,0 +1,16 @@
+/build/
+/vendor/
+
+# Not committed here for the same reason `../.gitignore` already carries
+# `/runtime/composer.lock` and `/runtime/vendor/`: this package is a
+# library, and a library's lock file pins ITS OWN development toolchain,
+# not something a consumer — or this monorepo's root, resolving `runtime/`
+# as a path repository — should inherit or need. `composer install` in
+# either shape (in-tree here, or the standalone split) resolves its own
+# lock at install time; CI does the same rather than trusting one committed
+# here.
+/composer.lock
+
+/.php-cs-fixer.cache
+/.phpunit.result.cache
+/.phpunit.cache/
