@@ -21,6 +21,14 @@ use function is_array;
  * optionals; null items inside a list are left alone (list positions are not
  * "unset optionals", so a `null` there is data, not an absence).
  *
+ * The map/list split is read off the array itself ({@see array_is_list}), so a
+ * map whose keys happen to be sequential numeric strings ("0", "1", …) reads as
+ * a list and keeps its nulls. That is not a hole this decorator opens: PHP
+ * interns those keys as ints on the way in, and `json_encode` already emits
+ * such a map as a JSON array before any pruning — the ambiguity belongs to the
+ * whole marshalling pipeline, and no decorator can recover the distinction from
+ * a PHP array alone.
+ *
  * This must never be the default `Marshaller`: globally omitting nulls is
  * wrong for any API that distinguishes "absent" from "null" (JSON Merge
  * Patch, `PATCH` bodies that null out a field on purpose). Wrap it around the
