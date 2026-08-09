@@ -6,6 +6,7 @@ namespace Poagen\Runtime\Tests;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Poagen\Runtime\Marshal\Hydrator;
 use Poagen\Runtime\Marshal\Marshaller;
@@ -257,5 +258,19 @@ final class MarshalRoundTripTest extends TestCase
         self::assertNotNull($hydrated->landmarks);
         self::assertInstanceOf(Point::class, $hydrated->landmarks['end']);
         self::assertSame(9, $hydrated->landmarks['end']->x);
+    }
+
+    /**
+     * A codec that refuses a malformed payload throws naming the format —
+     * {@see Fixtures\PointCodec} does, the same as `Format\Base64Codec` and
+     * `Format\RamseyUuidCodec` — and the Hydrator prepends which property it
+     * was decoding, so the message names both what was wrong and where.
+     */
+    public function testCodecDecodeFailurePrependsThePropertyName(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("property 'origin': format: point expects 'x,y'");
+
+        new Hydrator()->hydrate(Journey::class, ['origin' => 'not-a-point']);
     }
 }

@@ -33,6 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Format\RamseyUuid`/`Format\SymfonyUuid` shipped under
   `built-in-uuid-and-binary-format-bindings`
   (`reexpress-the-uuid-bindings-as-codecs.decision-260809`).
+- `Format\Base64Codec`: a `Codec` for `format: byte` — base64-encoded bytes
+  inside a JSON string — decoding with `base64_decode()` in strict mode and
+  encoding with `base64_encode()`, both PHP core. Unlike the two `uuid`
+  codecs, this one needs no `Profile::$formats` entry: the generator wires
+  it in as a built-in, the same way `date-time` wires in
+  `\DateTimeImmutable`, because both directions cost nobody a dependency.
+  `decode()` on a payload that is not valid base64 throws naming the format
+  rather than returning corrupted bytes (`base64-binding-for-format-byte`).
 - This package's own `composer.json` `require-dev`/`scripts`,
   `phpunit.xml.dist`, `phpstan.neon.dist` (same `level: max` the parent
   monorepo holds the generator to), `rector.php`, `.php-cs-fixer.dist.php`,
