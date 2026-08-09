@@ -12,6 +12,7 @@ use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use Poagen\Runtime\AdditionalPropertyBag;
+use Poagen\Runtime\Codec;
 use Poagen\Runtime\Contract\PropertyType;
 use Poagen\Runtime\ScalarBinding;
 use ReflectionNamedType;
@@ -34,11 +35,18 @@ use function in_array;
  */
 final class PropertyTypeResolver
 {
+    /**
+     * @param class-string<Codec>|null $codec the class {@see DescriptorParser} read off this
+     *                                        parameter's `#[Format]` attribute, when it named one —
+     *                                        null for every property no codec binds, which is most
+     *                                        of them
+     */
     public static function resolve(
         ?ReflectionType $native,
         ?TypeNode $phpdoc,
         ?string $format,
         string $namespace,
+        ?string $codec = null,
     ): PropertyType {
         if ($native instanceof ReflectionUnionType) {
             return self::resolveUnion($native);
@@ -51,7 +59,17 @@ final class PropertyTypeResolver
         $name = $native->getName();
 
         if ($name === 'array') {
-            return self::resolveArrayLike($phpdoc, $namespace);
+            return self::resolveArrayLike($phpdoc, $namespace, $codec);
+        }
+
+        // Checked before `isBuiltin()`, deliberately: a codec whose target is
+        // a PHP builtin (`format: byte` → `string`) would otherwise never be
+        // seen, because the very next branch would already have answered
+        // `passthrough()` for it. An explicit `#[Format(..., codec: ...)]`
+        // is generation-time guidance naming this exact property, so it
+        // outranks every structural check below it, builtin or class alike.
+        if ($codec !== null) {
+            return PropertyType::codec($codec);
         }
 
         if ($native->isBuiltin()) {
@@ -111,7 +129,10 @@ final class PropertyTypeResolver
         return PropertyType::model($name);
     }
 
-    private static function resolveArrayLike(?TypeNode $phpdoc, string $namespace): PropertyType
+    /**
+     * @param class-string<Codec>|null $codec
+     */
+    private static function resolveArrayLike(?TypeNode $phpdoc, string $namespace, ?string $codec): PropertyType
     {
         if (!$phpdoc instanceof TypeNode) {
             return PropertyType::passthrough();
@@ -124,19 +145,37 @@ final class PropertyTypeResolver
             $count = count($stripped->genericTypes);
 
             if ($head === 'list' && $count > 0) {
-                return PropertyType::listOf(self::resolvePhpdocType($stripped->genericTypes[0], $namespace));
+                return PropertyType::listOf(self::itemType($stripped->genericTypes[0], $namespace, $codec));
             }
 
             if ($head === 'array' && $count === 1) {
-                return PropertyType::listOf(self::resolvePhpdocType($stripped->genericTypes[0], $namespace));
+                return PropertyType::listOf(self::itemType($stripped->genericTypes[0], $namespace, $codec));
             }
 
             if ($head === 'array' && $count === 2) {
-                return PropertyType::mapOf(self::resolvePhpdocType($stripped->genericTypes[1], $namespace));
+                return PropertyType::mapOf(self::itemType($stripped->genericTypes[1], $namespace, $codec));
             }
         }
 
         return PropertyType::passthrough();
+    }
+
+    /**
+     * One list or map item's type. The native reflection type for a
+     * `list<T>`/`array<string,T>` property is always plain `array` — PHP
+     * carries no generic parameter at that level — so a codec bound to the
+     * whole property cannot be read off `$item`'s own reflected class the
+     * way {@see resolveClassType()} reads a scalar property's. It is instead
+     * threaded straight through from the property's own `#[Format]`
+     * attribute: the same codec that governs a bare `T` property governs
+     * every item of a `list<T>`/`array<string,T>` one, since one `format`
+     * applies to the whole property (`codec-bindings-for-foreign-value-types`).
+     *
+     * @param class-string<Codec>|null $codec
+     */
+    private static function itemType(TypeNode $node, string $namespace, ?string $codec): PropertyType
+    {
+        return $codec !== null ? PropertyType::codec($codec) : self::resolvePhpdocType($node, $namespace);
     }
 
     private static function stripNullable(TypeNode $node): TypeNode

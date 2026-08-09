@@ -17,6 +17,8 @@ use Poagen\Runtime\Tests\Fixtures\Email;
 use Poagen\Runtime\Tests\Fixtures\HttpTransportFixture;
 use Poagen\Runtime\Tests\Fixtures\NoWholeReadStream;
 use Poagen\Runtime\Tests\Fixtures\Pet;
+use Poagen\Runtime\Tests\Fixtures\Point;
+use Poagen\Runtime\Tests\Fixtures\PointCodec;
 
 /**
  * The six shapes a schema produces, decoded by the runtime rather than by
@@ -188,6 +190,41 @@ final class TransportResponseKindsTest extends TestCase
         self::assertCount(2, $emails);
         self::assertInstanceOf(Email::class, $emails[0]);
         self::assertSame('a@example.test', $emails[0]->value);
+    }
+
+    /**
+     * `ResponseType::codec()`: the foreign-type sibling of
+     * `ResponseType::binding()`, decoded through {@see PointCodec} rather
+     * than through `fromScalar()` on the value itself —
+     * `codec-bindings-for-foreign-value-types`.
+     */
+    public function testAScalarBoundToACodecRoundTripsThroughDecode(): void
+    {
+        $transport = $this->transport(new Response(200, ['Content-Type' => 'application/json'], '"3,4"'));
+
+        $point = $transport->send(Endpoint::get('/waypoint'), ResponseType::codec(PointCodec::class));
+
+        self::assertInstanceOf(Point::class, $point);
+        self::assertSame(3, $point->x);
+        self::assertSame(4, $point->y);
+    }
+
+    public function testAListItemBoundToACodecRoundTripsThroughDecode(): void
+    {
+        $transport = $this->transport(
+            new Response(200, ['Content-Type' => 'application/json'], '["1,1","2,2"]'),
+        );
+
+        $points = $transport->send(
+            Endpoint::get('/waypoints'),
+            ResponseType::scalarListOf(ResponseType::codec(PointCodec::class)),
+        );
+
+        self::assertCount(2, $points);
+        self::assertInstanceOf(Point::class, $points[0]);
+        self::assertInstanceOf(Point::class, $points[1]);
+        self::assertSame(1, $points[0]->x);
+        self::assertSame(2, $points[1]->y);
     }
 
     /**

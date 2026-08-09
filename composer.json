@@ -37,8 +37,8 @@
         "symfony/uid": "^7.0"
     },
     "suggest": {
-        "ramsey/uuid": "Bind format: uuid to ramsey/uuid via Poagen\\Runtime\\Format\\RamseyUuid",
-        "symfony/uid": "Bind format: uuid to symfony/uid via Poagen\\Runtime\\Format\\SymfonyUuid"
+        "ramsey/uuid": "Bind format: uuid to ramsey/uuid via Poagen\\Runtime\\Format\\RamseyUuidCodec",
+        "symfony/uid": "Bind format: uuid to symfony/uid via Poagen\\Runtime\\Format\\SymfonyUuidCodec"
     },
     "autoload": {
         "psr-4": {

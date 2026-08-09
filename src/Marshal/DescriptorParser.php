@@ -123,6 +123,7 @@ final class DescriptorParser implements DescriptorParserInterface
             $phpdocType,
             $formatAttr?->format,
             $namespace,
+            $formatAttr?->codec,
         );
 
         return new PropertyDescriptor(

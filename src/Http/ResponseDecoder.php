@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Poagen\Runtime\Http;
 
 use DateTimeImmutable;
+use Poagen\Runtime\Codec;
 use Poagen\Runtime\Contract\HydratorInterface;
 use Poagen\Runtime\Contract\PropertyDescriptor;
 use Poagen\Runtime\Contract\PropertyType;
@@ -71,6 +72,7 @@ final readonly class ResponseDecoder
             ResponseType::KIND_MAP => $this->map($data, $expected),
             ResponseType::KIND_DATETIME => $this->dateTime($data),
             ResponseType::KIND_SCALAR_BINDING => $this->scalarBinding($data, $expected),
+            ResponseType::KIND_CODEC => $this->codec($data, $expected),
             ResponseType::KIND_UNION => $this->union($data, $expected),
             // KIND_MIXED: the document left the shape unconstrained, so the
             // decoded body is the answer.
@@ -156,6 +158,29 @@ final readonly class ResponseDecoder
         }
 
         return $class::fromScalar($value);
+    }
+
+    /**
+     * The foreign-type sibling of {@see ScalarBinding()}: `$expected->model`
+     * carries the {@see Codec} FQCN — {@see ResponseType::codec()} reuses
+     * that field the same way {@see ResponseType::binding()} does — never
+     * the type it targets, so decoding a value already shaped as
+     * `Codec::targetType()` is left alone rather than run through
+     * `decode()` a second time.
+     *
+     * @param ResponseType<mixed> $expected
+     */
+    private function codec(mixed $value, ResponseType $expected): mixed
+    {
+        /** @var class-string<Codec> $codec */
+        $codec = $expected->model;
+        $target = $codec::targetType();
+
+        if ($value instanceof $target) {
+            return $value;
+        }
+
+        return $codec::decode($value);
     }
 
     private function scalar(ResponseInterface $response, string $type): string|int|float|bool

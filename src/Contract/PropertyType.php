@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Poagen\Runtime\Contract;
 
+use Poagen\Runtime\Codec;
+
 /**
  * One value-shape descriptor used by the {@see Marshaller} and {@see Hydrator}
  * to (de)serialise a single Model property. A flat tagged union — `kind` plus
@@ -18,6 +20,7 @@ final readonly class PropertyType
     public const string KIND_ENUM = 'enum';
     public const string KIND_MODEL = 'model';
     public const string KIND_SCALAR_BINDING = 'scalar_binding';
+    public const string KIND_CODEC = 'codec';
     public const string KIND_UNION = 'union';
     public const string KIND_LIST = 'list';
     public const string KIND_MAP = 'map';
@@ -67,6 +70,20 @@ final readonly class PropertyType
     public static function scalarBinding(string $vo): self
     {
         return new self(self::KIND_SCALAR_BINDING, class: $vo);
+    }
+
+    /**
+     * A scalar converted by a registered {@see Codec} rather
+     * than by the target type itself — the foreign-type sibling of
+     * {@see scalarBinding()}. `$class` is the codec, never the type it
+     * targets: the property is already declared as that target type, so
+     * only the converter needs naming here.
+     *
+     * @param class-string<Codec> $codec
+     */
+    public static function codec(string $codec): self
+    {
+        return new self(self::KIND_CODEC, class: $codec);
     }
 
     /**
