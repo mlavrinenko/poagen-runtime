@@ -32,7 +32,13 @@
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^12.1",
-        "rector/rector": "^2.3"
+        "ramsey/uuid": "^4.7",
+        "rector/rector": "^2.3",
+        "symfony/uid": "^7.0"
+    },
+    "suggest": {
+        "ramsey/uuid": "Bind format: uuid to ramsey/uuid via Poagen\\Runtime\\Format\\RamseyUuid",
+        "symfony/uid": "Bind format: uuid to symfony/uid via Poagen\\Runtime\\Format\\SymfonyUuid"
     },
     "autoload": {
         "psr-4": {

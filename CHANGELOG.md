@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Format\RamseyUuid` and `Format\SymfonyUuid`: `ScalarBinding`
+  implementations for `format: uuid`, wrapping `ramsey/uuid` and
+  `symfony/uid` respectively. Both libraries are `suggest`, never `require` —
+  a client that binds neither pulls in neither. Neither binding applies by
+  default; the generator's `Profile::$formats` is what selects one.
+  `toScalar()` pins the canonical RFC 4122 form on both, so the wire shape
+  does not follow whichever string cast the consumer's container is
+  configured for.
 - This package's own `composer.json` `require-dev`/`scripts`,
   `phpunit.xml.dist`, `phpstan.neon.dist` (same `level: max` the parent
   monorepo holds the generator to), `rector.php`, `.php-cs-fixer.dist.php`,
