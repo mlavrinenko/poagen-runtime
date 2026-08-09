@@ -35,12 +35,12 @@ jobs:
     name: "Lint (cs-fixer, rector)"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v7"
       - uses: "shivammathur/setup-php@v2"
         with:
           php-version: "8.4"
           coverage: "none"
-      - uses: "ramsey/composer-install@v3"
+      - uses: "ramsey/composer-install@v4"
       - name: "Check coding style (php-cs-fixer)"
         run: "composer lint:cs-fixer"
       - name: "Check refactorings (rector)"
@@ -50,12 +50,12 @@ jobs:
     name: "Static analysis (PHPStan)"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v7"
       - uses: "shivammathur/setup-php@v2"
         with:
           php-version: "8.4"
           coverage: "none"
-      - uses: "ramsey/composer-install@v3"
+      - uses: "ramsey/composer-install@v4"
       - run: "composer lint:phpstan"
 
   unit-tests:
@@ -69,12 +69,12 @@ jobs:
         os: ["ubuntu-latest", "macos-latest"]
         composer-deps: ["lowest", "highest"]
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v7"
       - uses: "shivammathur/setup-php@v2"
         with:
           php-version: "${{ matrix.php }}"
           coverage: "none"
-      - uses: "ramsey/composer-install@v3"
+      - uses: "ramsey/composer-install@v4"
         with:
           dependency-versions: "${{ matrix.composer-deps }}"
       - run: "composer test"
@@ -91,12 +91,12 @@ jobs:
     needs: ["lint", "static-analysis"]
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v7"
       - uses: "shivammathur/setup-php@v2"
         with:
           php-version: "8.4"
           coverage: "pcov"
-      - uses: "ramsey/composer-install@v3"
+      - uses: "ramsey/composer-install@v4"
         with:
           dependency-versions: "highest"
       - run: "composer test:coverage"
