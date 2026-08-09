@@ -7,6 +7,7 @@ namespace Poagen\Runtime\Marshal;
 use BackedEnum;
 use DateTimeInterface;
 use Poagen\Runtime\AdditionalPropertyBag;
+use Poagen\Runtime\Codec;
 use Poagen\Runtime\Contract\DescriptorParserInterface;
 use Poagen\Runtime\Contract\MarshallerInterface;
 use Poagen\Runtime\Contract\PropertyType;
@@ -77,6 +78,7 @@ final readonly class Marshaller implements MarshallerInterface
             PropertyType::KIND_ENUM => $this->encodeEnum($value),
             PropertyType::KIND_MODEL, PropertyType::KIND_UNION => $this->encodeModel($value),
             PropertyType::KIND_SCALAR_BINDING => $this->encodeScalarBinding($value),
+            PropertyType::KIND_CODEC => $this->encodeCodec($value, $type),
             PropertyType::KIND_LIST => $this->encodeList($value, $type),
             PropertyType::KIND_MAP => $this->encodeMap($value, $type),
             default => $value,
@@ -116,6 +118,20 @@ final readonly class Marshaller implements MarshallerInterface
         assert($value instanceof ScalarBinding);
 
         return $value->toScalar();
+    }
+
+    /**
+     * The foreign-type sibling of {@see encodeScalarBinding()}: `$type->class`
+     * names the {@see Codec}, and `$value` is already an instance of
+     * whatever that codec's `targetType()` says — the property is declared
+     * as that type directly, never a wrapper.
+     */
+    private function encodeCodec(mixed $value, PropertyType $type): mixed
+    {
+        /** @var class-string<Codec> $codec */
+        $codec = $type->class;
+
+        return $codec::encode($value);
     }
 
     /**

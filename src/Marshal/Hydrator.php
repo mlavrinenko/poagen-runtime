@@ -6,8 +6,10 @@ namespace Poagen\Runtime\Marshal;
 
 use BackedEnum;
 use DateTimeImmutable;
+use InvalidArgumentException;
 use LogicException;
 use Poagen\Runtime\AdditionalPropertyBag;
+use Poagen\Runtime\Codec;
 use Poagen\Runtime\Contract\DescriptorParserInterface;
 use Poagen\Runtime\Contract\HydratorInterface;
 use Poagen\Runtime\Contract\PropertyDescriptor;
@@ -19,6 +21,7 @@ use function assert;
 use function is_array;
 use function is_int;
 use function is_string;
+use function sprintf;
 
 /**
  * Inverse of {@see Marshaller}: turns a JSON-decoded array into a typed
@@ -121,6 +124,7 @@ final readonly class Hydrator implements HydratorInterface
             PropertyType::KIND_ENUM => $this->decodeEnum($value, $type),
             PropertyType::KIND_MODEL => $this->decodeModel($value, $type),
             PropertyType::KIND_SCALAR_BINDING => $this->decodeScalarBinding($value, $type),
+            PropertyType::KIND_CODEC => $this->decodeCodec($value, $type, $owner),
             PropertyType::KIND_UNION => $this->decodeUnion($value, $owner, $parent),
             PropertyType::KIND_LIST => $this->decodeList($value, $type, $owner, $parent),
             PropertyType::KIND_MAP => $this->decodeMap($value, $type, $owner, $parent),
@@ -176,6 +180,43 @@ final readonly class Hydrator implements HydratorInterface
         }
 
         return $class::fromScalar($value);
+    }
+
+    /**
+     * The foreign-type sibling of {@see decodeScalarBinding()}: `$type->class`
+     * names the {@see Codec}, never the type it targets, so the "already
+     * decoded" check compares against `$codec::targetType()` rather than
+     * against `$type->class` itself — the wire value is never an instance of
+     * the codec. A value already shaped as the target type is returned as
+     * is, so a caller that constructs a Model from already-typed values
+     * (rather than from raw wire data) is not forced to encode and
+     * immediately decode.
+     *
+     * A codec that refuses a malformed payload — `Format\Base64Codec` on a
+     * string that is not valid base64, `Format\RamseyUuidCodec` on one that
+     * is not a UUID — throws `InvalidArgumentException` naming the format;
+     * this catches it and prepends the property, so the error a consumer
+     * sees names both what was wrong and where, rather than only the first.
+     */
+    private function decodeCodec(mixed $value, PropertyType $type, ?PropertyDescriptor $owner): mixed
+    {
+        /** @var class-string<Codec> $codec */
+        $codec = $type->class;
+        $target = $codec::targetType();
+
+        if ($value instanceof $target) {
+            return $value;
+        }
+
+        try {
+            return $codec::decode($value);
+        } catch (InvalidArgumentException $e) {
+            if (!$owner instanceof PropertyDescriptor) {
+                throw $e;
+            }
+
+            throw new InvalidArgumentException(sprintf("property '%s': %s", $owner->wireName, $e->getMessage()), $e->getCode(), $e);
+        }
     }
 
     /**

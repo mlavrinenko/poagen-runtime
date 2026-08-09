@@ -7,40 +7,51 @@ namespace Poagen\Runtime\Tests;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Poagen\Runtime\Format\RamseyUuid;
-use Poagen\Runtime\Format\SymfonyUuid;
+use Poagen\Runtime\Format\RamseyUuidCodec;
+use Poagen\Runtime\Format\SymfonyUuidCodec;
 use Ramsey\Uuid\Uuid as RamseyLibrary;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Uid\Uuid as SymfonyLibrary;
 
 /**
- * `built-in-uuid-and-binary-format-bindings`: the two bindings this package
- * ships for `format: uuid`, neither of them applied by default and neither
- * of their libraries a `require`.
+ * `built-in-uuid-and-binary-format-bindings` shipped these as `ScalarBinding`
+ * wrappers; `codec-bindings-for-foreign-value-types` re-expressed them as
+ * codecs so the emitted property is the library's own `UuidInterface`/`Uuid`
+ * type rather than a wrapper around it. Neither codec applies by default,
+ * and neither library is a `require` of this package.
  */
 final class UuidFormatBindingTest extends TestCase
 {
     private const string CANONICAL = '2b1a7f60-4c2c-4a5b-9c6e-6a2f0d1e3b44';
 
+    public function testRamseyTargetsTheLibraryInterface(): void
+    {
+        self::assertSame(UuidInterface::class, RamseyUuidCodec::targetType());
+    }
+
+    public function testSymfonyTargetsTheLibraryClass(): void
+    {
+        self::assertSame(SymfonyLibrary::class, SymfonyUuidCodec::targetType());
+    }
+
     public function testRamseyRoundTripsTheCanonicalForm(): void
     {
-        $binding = RamseyUuid::fromScalar(self::CANONICAL);
+        $decoded = RamseyUuidCodec::decode(self::CANONICAL);
 
-        self::assertTrue($binding->value->equals(RamseyLibrary::fromString(self::CANONICAL)));
-        self::assertSame(self::CANONICAL, $binding->toScalar());
-        self::assertSame(self::CANONICAL, (string) $binding);
+        self::assertTrue($decoded->equals(RamseyLibrary::fromString(self::CANONICAL)));
+        self::assertSame(self::CANONICAL, RamseyUuidCodec::encode($decoded));
     }
 
     public function testSymfonyRoundTripsTheCanonicalForm(): void
     {
-        $binding = SymfonyUuid::fromScalar(self::CANONICAL);
+        $decoded = SymfonyUuidCodec::decode(self::CANONICAL);
 
-        self::assertTrue($binding->value->equals(SymfonyLibrary::fromString(self::CANONICAL)));
-        self::assertSame(self::CANONICAL, $binding->toScalar());
-        self::assertSame(self::CANONICAL, (string) $binding);
+        self::assertTrue($decoded->equals(SymfonyLibrary::fromString(self::CANONICAL)));
+        self::assertSame(self::CANONICAL, SymfonyUuidCodec::encode($decoded));
     }
 
     /**
-     * Upper case in, canonical out. A binding that echoed back whatever the
+     * Upper case in, canonical out. A codec that echoed back whatever the
      * payload happened to spell would put two spellings of one identifier on
      * the wire depending on which end wrote it.
      */
@@ -48,13 +59,13 @@ final class UuidFormatBindingTest extends TestCase
     {
         $shouted = strtoupper(self::CANONICAL);
 
-        self::assertSame(self::CANONICAL, RamseyUuid::fromScalar($shouted)->toScalar());
-        self::assertSame(self::CANONICAL, SymfonyUuid::fromScalar($shouted)->toScalar());
+        self::assertSame(self::CANONICAL, RamseyUuidCodec::encode(RamseyUuidCodec::decode($shouted)));
+        self::assertSame(self::CANONICAL, SymfonyUuidCodec::encode(SymfonyUuidCodec::decode($shouted)));
     }
 
     /**
      * `symfony/uid` accepts base58 and base32 spellings on the way in, and
-     * its own string cast is configurable. `toScalar()` pins RFC 4122 so the
+     * its own string cast is configurable. `encode()` pins RFC 4122 so the
      * wire form is a property of the schema rather than of the consumer's
      * container.
      */
@@ -63,15 +74,15 @@ final class UuidFormatBindingTest extends TestCase
         $base58 = SymfonyLibrary::fromString(self::CANONICAL)->toBase58();
 
         self::assertNotSame(self::CANONICAL, $base58);
-        self::assertSame(self::CANONICAL, SymfonyUuid::fromScalar($base58)->toScalar());
+        self::assertSame(self::CANONICAL, SymfonyUuidCodec::encode(SymfonyUuidCodec::decode($base58)));
     }
 
     /**
-     * @return list<array{class-string<RamseyUuid|SymfonyUuid>}>
+     * @return list<array{class-string<RamseyUuidCodec|SymfonyUuidCodec>}>
      */
-    public static function bindings(): array
+    public static function codecs(): array
     {
-        return [[RamseyUuid::class], [SymfonyUuid::class]];
+        return [[RamseyUuidCodec::class], [SymfonyUuidCodec::class]];
     }
 
     /**
@@ -79,25 +90,25 @@ final class UuidFormatBindingTest extends TestCase
      * message would name the library instead of the wire value that was
      * actually wrong.
      *
-     * @param class-string<RamseyUuid|SymfonyUuid> $binding
+     * @param class-string<RamseyUuidCodec|SymfonyUuidCodec> $codec
      */
-    #[DataProvider('bindings')]
-    public function testANonStringPayloadIsRefusedNamingTheFormat(string $binding): void
+    #[DataProvider('codecs')]
+    public function testANonStringPayloadIsRefusedNamingTheFormat(string $codec): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('format: uuid expects a string payload, got int');
 
-        $binding::fromScalar(42);
+        $codec::decode(42);
     }
 
     /**
-     * @param class-string<RamseyUuid|SymfonyUuid> $binding
+     * @param class-string<RamseyUuidCodec|SymfonyUuidCodec> $codec
      */
-    #[DataProvider('bindings')]
-    public function testAMalformedStringIsRefused(string $binding): void
+    #[DataProvider('codecs')]
+    public function testAMalformedStringIsRefused(string $codec): void
     {
         $this->expectException(InvalidArgumentException::class);
 
-        $binding::fromScalar('not-a-uuid');
+        $codec::decode('not-a-uuid');
     }
 }

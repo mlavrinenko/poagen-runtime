@@ -43,6 +43,9 @@ interface ResponseTypeKind
     /** A scalar wrapped by a `ScalarBinding` value object. */
     public const string KIND_SCALAR_BINDING = 'scalar_binding';
 
+    /** A scalar converted by a registered `Codec` rather than by itself. */
+    public const string KIND_CODEC = 'codec';
+
     /** A scalar, cast from the raw body without decoding. */
     public const string KIND_SCALAR = 'scalar';
 

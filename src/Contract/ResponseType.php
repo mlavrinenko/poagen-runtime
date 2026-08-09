@@ -7,6 +7,7 @@ namespace Poagen\Runtime\Contract;
 use DateTimeImmutable;
 use Poagen\Runtime\Attribute\BranchSelector;
 use Poagen\Runtime\Attribute\Discriminator;
+use Poagen\Runtime\Codec;
 use Poagen\Runtime\ScalarBinding;
 use Psr\Http\Message\StreamInterface;
 
@@ -223,6 +224,30 @@ final readonly class ResponseType implements ResponseTypeKind
     {
         /** @var self<TVo> $type */
         $type = new self(self::KIND_SCALAR_BINDING, model: $vo);
+
+        return $type;
+    }
+
+    /**
+     * A scalar converted by a registered {@see Codec} —
+     * the foreign-type sibling of {@see binding()}. `$codec` is the
+     * converter, not the type it targets: a codec-bound response scalar is
+     * whatever {@see Codec::targetType()} says. Unlike
+     * {@see binding()}, that answer is not carried in `self`'s own template
+     * parameter — `ScalarBinding::fromScalar()` returns `self`, so PHPStan
+     * infers the bound type from the class alone, but a codec converts on
+     * behalf of a type it does not declare itself, so nothing here can name
+     * it statically. A caller that needs the concrete type back narrows it
+     * itself, the same way `mixed` from any other dynamic decode does.
+     *
+     * @param class-string<Codec> $codec
+     *
+     * @return self<mixed>
+     */
+    public static function codec(string $codec): self
+    {
+        /** @var self<mixed> $type */
+        $type = new self(self::KIND_CODEC, model: $codec);
 
         return $type;
     }
