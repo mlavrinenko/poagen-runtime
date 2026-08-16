@@ -9,6 +9,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use LogicException;
 use Poagen\Runtime\AdditionalPropertyBag;
+use Poagen\Runtime\BindingContext;
 use Poagen\Runtime\Codec;
 use Poagen\Runtime\Contract\DescriptorParserInterface;
 use Poagen\Runtime\Contract\HydratorInterface;
@@ -33,6 +34,7 @@ final readonly class Hydrator implements HydratorInterface
 {
     public function __construct(
         private DescriptorParserInterface $descriptors = new DescriptorParser(),
+        private BindingContext $context = new BindingContext(),
     ) {}
 
     /**
@@ -139,7 +141,9 @@ final readonly class Hydrator implements HydratorInterface
         }
         assert(is_string($value));
 
-        return new DateTimeImmutable($value);
+        // Which zone an offset-free value means is the consumer's to state,
+        // never this line's to assume — see {@see BindingContext}.
+        return $this->context->dateTime($value);
     }
 
     private function decodeEnum(mixed $value, PropertyType $type): BackedEnum
@@ -179,7 +183,7 @@ final readonly class Hydrator implements HydratorInterface
             return $value;
         }
 
-        return $class::fromScalar($value);
+        return $this->context->hydrateBinding($class, $value);
     }
 
     /**

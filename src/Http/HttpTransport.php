@@ -6,6 +6,7 @@ namespace Poagen\Runtime\Http;
 
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
+use Poagen\Runtime\BindingContext;
 use Poagen\Runtime\Contract\ApiErrorInterface;
 use Poagen\Runtime\Contract\DescriptorParserInterface;
 use Poagen\Runtime\Contract\Endpoint;
@@ -55,6 +56,15 @@ use function sprintf;
  * The PSR-18 client is discovered on first use rather than in the
  * constructor, so wiring a transport in a container never fails for an
  * application that has not sent a request yet.
+ *
+ * `$context` is the last argument and the only one that is not a collaborator
+ * but a statement of fact: what the consumer knows about the installation
+ * that the document could not say — see {@see BindingContext}. It reaches the
+ * defaulted marshaller and hydrator only. A consumer who supplies either of
+ * those themselves is telling the transport how marshalling works, so they
+ * pass the context to their own instance instead; a decorator such as
+ * {@see Marshal\OmitNullMarshaller} wraps a `Marshaller` the consumer built,
+ * and that is the one to hand it to.
  */
 final class HttpTransport implements TransportInterface
 {
@@ -78,17 +88,19 @@ final class HttpTransport implements TransportInterface
         ?HydratorInterface $hydrator = null,
         ?XmlWriterInterface $xmlWriter = null,
         ?DescriptorParserInterface $descriptors = null,
+        ?BindingContext $context = null,
     ) {
         $descriptors ??= new DescriptorParser();
+        $context ??= new BindingContext();
         $this->errors = is_string($errors) ? new ApiExceptionFactory($errors) : $errors;
         $this->requests = new PsrRequestBuilder(
             $baseUri,
             $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory(),
             $streamFactory ?? Psr17FactoryDiscovery::findStreamFactory(),
-            $marshaller ?? new Marshaller($descriptors),
+            $marshaller ?? new Marshaller($descriptors, $context),
             $xmlWriter ?? new XmlWriter(),
         );
-        $this->decoder = new ResponseDecoder($hydrator ?? new Hydrator($descriptors));
+        $this->decoder = new ResponseDecoder($hydrator ?? new Hydrator($descriptors, $context));
     }
 
     /**

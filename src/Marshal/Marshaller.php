@@ -7,6 +7,7 @@ namespace Poagen\Runtime\Marshal;
 use BackedEnum;
 use DateTimeInterface;
 use Poagen\Runtime\AdditionalPropertyBag;
+use Poagen\Runtime\BindingContext;
 use Poagen\Runtime\Codec;
 use Poagen\Runtime\Contract\DescriptorParserInterface;
 use Poagen\Runtime\Contract\MarshallerInterface;
@@ -30,6 +31,7 @@ final readonly class Marshaller implements MarshallerInterface
 {
     public function __construct(
         private DescriptorParserInterface $descriptors = new DescriptorParser(),
+        private BindingContext $context = new BindingContext(),
     ) {}
 
     /**
@@ -107,7 +109,7 @@ final readonly class Marshaller implements MarshallerInterface
         }
 
         if ($value instanceof ScalarBinding) {
-            return $value->toScalar();
+            return $this->context->scalarOf($value);
         }
 
         return $this->marshal($value);
@@ -117,7 +119,7 @@ final readonly class Marshaller implements MarshallerInterface
     {
         assert($value instanceof ScalarBinding);
 
-        return $value->toScalar();
+        return $this->context->scalarOf($value);
     }
 
     /**
