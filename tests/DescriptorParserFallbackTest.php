@@ -138,7 +138,7 @@ final class DescriptorParserFallbackTest extends TestCase
 
         try {
             $cmd = sprintf(
-                '%s -d opcache.enable_cli=1 -d opcache.save_comments=0 %s 2>&1',
+                '%s -d opcache.enable_cli=1 -d opcache.save_comments=0 -d opcache.jit=disable %s 2>&1',
                 escapeshellarg(PHP_BINARY),
                 escapeshellarg($scriptPath),
             );
@@ -147,10 +147,16 @@ final class DescriptorParserFallbackTest extends TestCase
             @unlink($scriptPath);
         }
 
+        // CI enables JIT by default, and JIT plus PCOV prints a warning on
+        // stderr before the script runs. The script's own answer is the last
+        // line; assert that, and keep the whole output in the failure message.
+        $lines = explode("\n", $output);
+        $result = trim(end($lines));
+
         // Guard against someone simplifying the test to the point where the
         // fallback doesn't actually fire — we need `getDocComment()` to
         // return false *and* hydration to still produce a Tag.
-        self::assertSame('stripped:tag', $output, "Subprocess output: {$output}");
+        self::assertSame('stripped:tag', $result, "Subprocess output: {$output}");
     }
 
     private function phpString(string $raw): string
