@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-    <em>⚠️ Pre-alpha. API is unstable. Not yet on Packagist.</em>
+    <em>⚠️ Pre-alpha. API is unstable.</em>
 </p>
 
 ## About
@@ -46,20 +46,16 @@ Guzzle, Symfony HTTP Client, or anything else that implements them.
 composer require poagen/client-runtime
 ```
 
-Not on Packagist yet — that is tracked separately as
-`publish-the-runtime-package-to-packagist` in the parent
-[poagen](https://github.com/mlavrinenko/poagen) monorepo's own task tracker.
-
 ## Development
 
-This directory is developed inside the
-[poagen monorepo](https://github.com/mlavrinenko/poagen), but is fully
-self-contained: its `composer.json`, test suite, and every lint/static
-analysis/formatting config here are scoped to this tree alone, with no path
-escaping it. `git subtree split --prefix=runtime` of the parent repository
-produces exactly this directory as a standalone, checkable package —
-verified by installing and gating that split in isolation, with the
-generator absent (`bundle-the-runtime-package-with-its-own-ci-tooling`).
+The package is developed in the
+[poagen repository](https://github.com/mlavrinenko/poagen), where it lives
+as `runtime/`, and is fully self-contained: its `composer.json`, test suite,
+and every lint/static-analysis/formatting config are scoped to this tree
+alone, with the generator absent.
+
+For a standalone checkout, `git subtree split --prefix=runtime` from the
+parent repository produces exactly this tree.
 
 ```bash
 composer install

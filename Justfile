@@ -1,6 +1,6 @@
 set dotenv-load := false
 
-# Same reasoning as `../Justfile`'s identical export: Rector, and PHPStan
+# Same reasoning as the monorepo root Justfile's identical export: Rector, and PHPStan
 # when no `tmpDir` is configured, compile a DI container keyed by config
 # hash into $TMPDIR, and the default is a machine-wide /tmp path that
 # survives a worktree's own deletion. Scoping it per checkout — here, per
@@ -20,10 +20,8 @@ tmpdir:
 
 # Run all quality checks (lint + test with the coverage floor enforced)
 #
-# This is the recipe `git subtree split --prefix=runtime` has to leave
-# runnable on its own, with the generator absent
-# (`bundle-the-runtime-package-with-its-own-ci-tooling`) — the whole reason
-# this file, and every config next to it, exists.
+# This is the whole gate with the generator absent — the runtime is its own
+# package, so nothing here reaches outside this tree.
 check: tmpdir lint test-coverage
 
 # Full pre-commit gate
@@ -35,7 +33,7 @@ lint: tmpdir
 
 # Check code style (PER-CS 2.0 + PHP 8.4)
 #
-# Needs `tmpdir` for the same reason `../Justfile`'s `lint-cs-fixer` does:
+# Needs `tmpdir` for the same reason the monorepo root Justfile's `lint-cs-fixer` does:
 # php-cs-fixer spawns its parallel workers through PHP's
 # `sys_get_temp_dir()`, which is $TMPDIR.
 lint-cs-fixer: tmpdir
@@ -62,7 +60,7 @@ lint-linecop:
 # `lint-jscpd-generated` applies to a generated client — that whole tier
 # does not exist here.
 #
-# 3.0% mirrors `../Justfile`'s `lint-jscpd` RATCHET value rather than being
+# 3.0% mirrors the monorepo root Justfile's `lint-jscpd` RATCHET value rather than being
 # independently derived, so the two thresholds read the same even though
 # they gate different trees. Measured here on the day this file was
 # written: 2.05% duplicated lines, 16 clones over 60 files (`src/` and
@@ -92,12 +90,12 @@ test: tmpdir
 
 # Run tests with coverage and enforce the statement-coverage floor
 # (coverage-floor-in-the-gate). One floor, not two: this package has only
-# one tier, `src/` — the two-floor split in `../Justfile`'s equivalent
+# one tier, `src/` — the two-floor split in the monorepo root Justfile's equivalent
 # recipe exists because the monorepo measures the generator and this
 # package separately from one shared run; standalone, there is only this
 # package to measure.
 #
-# 87.0, not `../Justfile`'s 92.0 for the identical `runtime/src` tier: that
+# 87.0, not the monorepo root Justfile's 92.0 for the identical `src` tier: that
 # figure is measured across the WHOLE monorepo suite, which includes
 # generator-side integration tests that exercise `runtime/src` too —
 # `tests/Integration/ResponseUnionSelectionTest.php` and
@@ -108,11 +106,11 @@ test: tmpdir
 # that exists once this package is standalone with the generator absent, so
 # `runtime/tests` alone measures a lower, but honestly this package's own,
 # figure: 87.10% the day this floor was set (621/713 statements) — 87.0 is
-# just below it, the same margin `../Justfile`'s own RATCHET comments use
+# just below it, the same margin the monorepo root Justfile's own RATCHET comments use
 # elsewhere in this monorepo. This is the real baseline this package's own
 # tests achieve alone, not a demotion of the root's bar.
 #
-# Same PCOV wiring as `../Justfile`'s `test-coverage`, for the identical
+# Same PCOV wiring as the monorepo root Justfile's `test-coverage`, for the identical
 # reason that recipe's own comment explains: `pcov.directory` must be set
 # explicitly or PCOV auto-detects the wrong root and silently reports 0%.
 #

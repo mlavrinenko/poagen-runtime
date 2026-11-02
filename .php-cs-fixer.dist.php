@@ -2,17 +2,15 @@
 
 declare(strict_types=1);
 
-// Scoped to `runtime/` alone (`bundle-the-runtime-package-with-its-own-ci-
-// tooling`): no `../src`, no `../tests` — everything this `Finder` walks
-// has to still exist once `git subtree split --prefix=runtime` hands this
-// file a tree rooted here. Unlike `../.php-cs-fixer.dist.php`, there is no
+// Scoped to this package alone: no monorepo `src/` or `tests/` —
+// everything this `Finder` walks lives under this tree. There is no
 // `exclude(['fixtures/generated'])` or generated-`*Test.php` `notPath()`:
 // this package emits nothing, so it carries no generated-code tier to
 // exempt from formatting.
 $finder = (new PhpCsFixer\Finder())
     ->in([__DIR__ . '/src', __DIR__ . '/tests']);
 
-// The rule set mirrors `../.php-cs-fixer.dist.php`'s exactly, for the same
+// The rule set mirrors the monorepo root `.php-cs-fixer.dist.php`'s exactly, for the same
 // reason `rector.php`'s comment gives: the acceptance criteria this
 // package's tooling has to meet is the same bar the root holds the
 // generator to, not a bar of its own. A `PhpCsFixer\Config` has no

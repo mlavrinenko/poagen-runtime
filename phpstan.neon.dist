@@ -9,18 +9,18 @@ parameters:
   paths:
     - src
     - tests
-  # No `excludePaths` and no `ignoreErrors`. The root config
-  # (`../phpstan.neon.dist`) carries both, but every entry either scopes the
+  # No `excludePaths` and no `ignoreErrors`. The monorepo root config
+  # (`phpstan.neon.dist` there) carries both, but every entry either scopes the
   # generator's own generated-code tier (`tests/fixtures/generated/*`,
   # `examples/kilbil/generated`) or exempts speconaut-generated step stubs
-  # (`tests/generated/*Steps.php`) — none of that exists under `runtime/`, so
+  # (`tests/generated/*Steps.php`) — none of that exists under this package, so
   # there is nothing here for either key to name. Add one only with the same
   # discipline the root config documents: a real, provable blind spot, never
   # a real finding annotated away.
   #
   # No `shipmonk/dead-code-detector` include either
-  # (`bundle-the-runtime-package-with-its-own-ci-tooling`): the root config
-  # runs it over `runtime/src` and `runtime/tests` too (its own `paths:` list
+  # (`bundle-the-runtime-package-with-its-own-ci-tooling`): the monorepo root config
+  # runs it over this package's `src` and `tests` too (its own `paths:` list
   # includes both), so this package is still checked for dead code every time
   # the root gate runs — this file only has to hold the same level and the
   # same strict/deprecation rule sets the acceptance criteria name, not every
