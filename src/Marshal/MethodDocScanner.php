@@ -37,9 +37,7 @@ final class MethodDocScanner
             return false;
         }
 
-        if (!isset(self::$cache[$file])) {
-            self::$cache[$file] = self::scan($file);
-        }
+        self::$cache[$file] ??= self::scan($file);
 
         return self::$cache[$file][$method->getName()] ?? false;
     }

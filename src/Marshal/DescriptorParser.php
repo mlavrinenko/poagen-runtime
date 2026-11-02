@@ -57,7 +57,7 @@ final class DescriptorParser implements DescriptorParserInterface
         $reflection = new ReflectionClass($class);
         $constructor = $reflection->getConstructor();
 
-        if ($constructor === null) {
+        if (!$constructor instanceof ReflectionMethod) {
             return $this->cache[$class] = [];
         }
 
@@ -114,7 +114,7 @@ final class DescriptorParser implements DescriptorParserInterface
     ): PropertyDescriptor {
         $phpName = $parameter->getName();
         $wireAttr = $this->attributeValue($parameter, WireName::class);
-        $wireName = $wireAttr === null ? $phpName : $wireAttr->name;
+        $wireName = $wireAttr->name ?? $phpName;
         $formatAttr = $this->attributeValue($parameter, Format::class);
         $discriminator = $this->attributeValue($parameter, Discriminator::class);
 
