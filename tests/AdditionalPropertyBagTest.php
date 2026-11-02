@@ -95,6 +95,9 @@ final class AdditionalPropertyBagTest extends TestCase
         $values['colour'] = 'blue';
         $values['added'] = true;
 
+        // The caller's copy did change; the bag still holds the old state.
+        self::assertSame('blue', $values['colour']);
+        self::assertTrue($values['added']);
         self::assertSame('red', $bag->get('colour'));
         self::assertFalse($bag->has('added'));
         self::assertSame(1, count($bag));

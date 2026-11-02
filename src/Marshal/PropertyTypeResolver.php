@@ -141,7 +141,7 @@ final class PropertyTypeResolver
         $stripped = self::stripNullable($phpdoc);
 
         if ($stripped instanceof GenericTypeNode) {
-            $head = $stripped->type->name;
+            $head = (string) $stripped->type;
             $count = count($stripped->genericTypes);
 
             if ($head === 'list' && $count > 0) {
