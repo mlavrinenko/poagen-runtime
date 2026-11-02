@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet — `0.1.0` below is the current tip.
+
+## 0.1.0 - 2026-11-03
+
 ### Added
 
 - `Codec` interface: the foreign-type sibling of `ScalarBinding`, for a
